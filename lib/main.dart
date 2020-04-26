@@ -1,4 +1,8 @@
+import 'package:dixit/services/web_services.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+
+import 'pages/_pages.dart';
 
 void main() => runApp(MyApp());
 
@@ -7,20 +11,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
-        primarySwatch: Colors.blue,
-      ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      title: 'Dixit',
+      home: MainPage(),
     );
   }
 }
@@ -46,7 +38,19 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
 
-  void _incrementCounter() {
+  final databaseReference = FirebaseDatabase.instance.reference();
+  DatabaseReference _firebaseRef;
+
+  @override
+  void initState() {
+    print(databaseReference);
+
+    _firebaseRef = databaseReference.child("test");
+
+    super.initState();
+  }
+
+  void _incrementCounter() async {
     setState(() {
       // This call to setState tells the Flutter framework that something has
       // changed in this State, which causes it to rerun the build method below
@@ -55,6 +59,19 @@ class _MyHomePageState extends State<MyHomePage> {
       // called again, and so nothing would appear to happen.
       _counter++;
     });
+
+    _firebaseRef.push().set({
+      "message": 'toto',
+      "timestamp": DateTime.now().millisecondsSinceEpoch
+    });
+
+    print(_firebaseRef);
+    return;
+
+    var result = await WebServices.getCardsNames();
+    print(result);
+
+
   }
 
   @override
@@ -97,6 +114,12 @@ class _MyHomePageState extends State<MyHomePage> {
             Text(
               '$_counter',
               style: Theme.of(context).textTheme.display1,
+            ),
+            StreamBuilder<Event>(
+              stream: _firebaseRef.onValue,
+              builder: (context, snapshot) {
+                return Text('${snapshot.data?.snapshot?.value}');
+              }
             ),
           ],
         ),
