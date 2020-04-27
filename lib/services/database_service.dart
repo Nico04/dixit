@@ -1,14 +1,27 @@
+import 'package:dixit/models/_models.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:dixit/helpers/tools.dart';
 
 class DatabaseService {
   static final _root = FirebaseDatabase.instance.reference();
 
-  static Future<Room> jointOrCreateRoom() {
+  static DatabaseReference _getRoomRef(String roomName) =>
+    _root.child('rooms').child(roomName.normalized);
 
+  static Future<Room> getRoom(String roomName) async =>
+    Room.fromJson((await _getRoomRef(roomName).once()).value);
+
+  static Stream<Room> getRoomStream(String roomName) {
+    var ref = _getRoomRef(roomName);
+    ref.keepSynced(true);
+    return _getRoomRef(roomName).onValue.map((event) => Room.fromJson(event.snapshot.value));
   }
 
+  static Future<void> saveRoom(Room room) async =>
+    await _getRoomRef(room.name).update(room.toJson());
+
   static Future<int> getRoomsCount() async {
-    //TODO
-    /*var snapshot = await _root*/
+    //TODO need to use a Cloud Function to keep rooms.length updated on the DB
+    throw UnimplementedError();
   }
 }
