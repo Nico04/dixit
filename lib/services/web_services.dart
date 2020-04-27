@@ -3,17 +3,19 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class WebServices {
-  static const cardsBaseUrl = "https://nico04.github.io/dixit/cards/";
+  static const _cardsBaseUrl = "https://nico04.github.io/dixit/cards/";
 
   static Future<List<String>> getCardsNames() async {
     var response = await http.get(
-      Uri.encodeFull(cardsBaseUrl + "cards.json")
+      Uri.encodeFull(_cardsBaseUrl + "cards.json")
     );
 
     var result = _processResponse<List<dynamic>>(response);
 
     return result.cast();
   }
+
+  static getCardUrl(String fileName) => _cardsBaseUrl + fileName;
 
   static T _processResponse<T>(http.Response response) {
     //Read response body

@@ -24,4 +24,10 @@ class DatabaseService {
     //TODO need to use a Cloud Function to keep rooms.length updated on the DB
     throw UnimplementedError();
   }
+
+  static Future<void> savePhase(String roomName, Phase phase) async =>
+    await _getRoomRef(roomName).child('phase').update(phase.toJson());
+
+  static Future<void> savePlayer(String roomName, Player player) async =>
+    await _getRoomRef(roomName).child('players').child(player.name).update(player.toJson());
 }

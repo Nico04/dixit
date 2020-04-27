@@ -110,7 +110,7 @@ class MainPageBloc with Disposable {
   String playerName;
   String roomName;
 
-  List<String> availableCards;
+  List<String> availableCards;     // All existing cards
 
   final isReady = BehaviorSubject.seeded(false);
 
@@ -150,7 +150,7 @@ class MainPageBloc with Disposable {
       roomName = room.name;   // Update field with true value (may be normalized)
 
     // Get player
-    var player = room.players.firstWhere((p) => p.name.normalized == playerName.normalized, orElse: () => null);
+    var player = room.players.values.firstWhere((p) => p.name.normalized == playerName.normalized, orElse: () => null);
     if (player == null) {
       //TODO handle if same playerName is submitted on 2 different devices
       if (room.isGameStarted) {
@@ -159,7 +159,7 @@ class MainPageBloc with Disposable {
       }
 
       player = Player(playerName);
-      room.players.add(player);
+      room.players[player.name] = player;
       await DatabaseService.saveRoom(room);
     } else {
       playerName = player.name;

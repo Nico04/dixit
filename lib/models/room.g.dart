@@ -9,18 +9,11 @@ part of 'room.dart';
 Room _$RoomFromJson(Map json) {
   return Room(
     json['name'] as String,
-    players: (json['players'] as List)
-        ?.map((e) => e == null
-            ? null
-            : Player.fromJson((e as Map)?.map(
-                (k, e) => MapEntry(k as String, e),
-              )))
-        ?.toList(),
-    phase: json['phase'] == null
-        ? null
-        : Phase.fromJson((json['phase'] as Map)?.map(
-            (k, e) => MapEntry(k as String, e),
-          )),
+    players: (json['players'] as Map)?.map(
+      (k, e) =>
+          MapEntry(k as String, e == null ? null : Player.fromJson(e as Map)),
+    ),
+    phase: json['phase'] == null ? null : Phase.fromJson(json['phase'] as Map),
     turn: json['turn'] as int,
   );
 }
@@ -35,7 +28,8 @@ Map<String, dynamic> _$RoomToJson(Room instance) {
   }
 
   writeNotNull('name', instance.name);
-  writeNotNull('players', instance.players?.map((e) => e?.toJson())?.toList());
+  writeNotNull(
+      'players', instance.players?.map((k, e) => MapEntry(k, e?.toJson())));
   writeNotNull('phase', instance.phase?.toJson());
   writeNotNull('turn', instance.turn);
   return val;

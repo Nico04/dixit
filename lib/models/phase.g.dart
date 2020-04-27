@@ -8,32 +8,15 @@ part of 'phase.dart';
 
 Phase _$PhaseFromJson(Map json) {
   return Phase(
+    json['mainPlayerName'] as String,
     number: json['number'] as int,
-    mainPlayer: json['mainPlayer'] == null
-        ? null
-        : Player.fromJson((json['mainPlayer'] as Map)?.map(
-            (k, e) => MapEntry(k as String, e),
-          )),
     sentence: json['sentence'] as String,
-    cards: (json['cards'] as Map)?.map(
-      (k, e) => MapEntry(
-          k as String,
-          e == null
-              ? null
-              : Player.fromJson((e as Map)?.map(
-                  (k, e) => MapEntry(k as String, e),
-                ))),
+    playedCards: (json['playedCards'] as Map)?.map(
+      (k, e) => MapEntry(k as String, e as String),
     ),
     votes: (json['votes'] as Map)?.map(
-      (k, e) => MapEntry(
-          k as String,
-          (e as List)
-              ?.map((e) => e == null
-                  ? null
-                  : Player.fromJson((e as Map)?.map(
-                      (k, e) => MapEntry(k as String, e),
-                    )))
-              ?.toList()),
+      (k, e) =>
+          MapEntry(k as String, (e as List)?.map((e) => e as String)?.toList()),
     ),
   );
 }
@@ -47,14 +30,10 @@ Map<String, dynamic> _$PhaseToJson(Phase instance) {
     }
   }
 
+  writeNotNull('mainPlayerName', instance.mainPlayerName);
   writeNotNull('number', instance.number);
-  writeNotNull('mainPlayer', instance.mainPlayer?.toJson());
   writeNotNull('sentence', instance.sentence);
-  writeNotNull(
-      'cards', instance.cards?.map((k, e) => MapEntry(k, e?.toJson())));
-  writeNotNull(
-      'votes',
-      instance.votes
-          ?.map((k, e) => MapEntry(k, e?.map((e) => e?.toJson())?.toList())));
+  writeNotNull('playedCards', instance.playedCards);
+  writeNotNull('votes', instance.votes);
   return val;
 }

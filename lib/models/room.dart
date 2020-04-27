@@ -5,13 +5,15 @@ part 'room.g.dart';
 
 @JsonSerializable()
 class Room {
-  final String name;
-  final List<Player> players;
-  final Phase phase;
+  final String name;    //Room name, may differ from the database key which is normalized
+  final Map<String, Player> players;    // <playerName, player>
+  Phase phase;
   int turn;
 
-  Room(this.name, {List<Player> players, this.phase, int turn}) :
-    this.players = players ?? List<Player>(),
+  Player get mainPlayer => phase != null ? players[phase.mainPlayerName] : null;
+
+  Room(this.name, {Map<String, Player> players, this.phase, int turn}) :
+    this.players = players ?? Map<String, Player>(),
     this.turn = turn ?? 0;
 
   bool get isGameStarted => turn > 0;

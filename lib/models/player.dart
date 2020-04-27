@@ -4,7 +4,7 @@ part 'player.g.dart';
 
 @JsonSerializable()
 class Player {
-  final String name;
+  final String name;    //OPTI remove this from json, because it's on the key already
   List<String> cards;
   final int score;
 
