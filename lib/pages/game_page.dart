@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:dixit/helpers/tools.dart';
@@ -17,8 +18,9 @@ const _pageContentPadding = EdgeInsets.all(15);
 class GamePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Provider(
+    return Provider<GamePageBloc>(
       create: (context) => GamePageBloc(Provider.of<MainPageBloc>(context, listen: false)),
+      dispose: (_, bloc) => bloc.dispose(),
       child: Consumer<GamePageBloc>(
         builder: (context, bloc, _) {
           return WillPopScope(
@@ -54,40 +56,47 @@ class GamePage extends StatelessWidget {
                   var isMainPlayer = player.name == room.phase.mainPlayerName;
                   var phaseNumber = room.phase.number;
 
+                  // Prepare content
+                  Color color;
+                  String text;
+                  bool mustSelectSentence = false;
+                  CardPickerSelectCallback onSelectCallback;
+
+                  if (phaseNumber == 1) {
+                    color = isMainPlayer ? Colors.greenAccent : Colors.grey;
+                    text = isMainPlayer ? 'Choisir une carte, puis une phrase' : 'Attendre';
+                    mustSelectSentence = isMainPlayer;
+                    if (isMainPlayer)
+                      onSelectCallback = (card, sentence) => bloc.setSentence(room, card, sentence);
+
+                  } else if (phaseNumber == 2) {
+                    var playerHasSelected = room.phase.playedCards.keys.contains(player.name);
+                    var hasActionToDo = !isMainPlayer && !playerHasSelected;
+                    color = hasActionToDo ? Colors.greenAccent : Colors.grey;
+                    text = hasActionToDo ? 'Choisir une carte :\n${room.phase.sentence}' : 'Attendre';
+                    if (hasActionToDo)
+                      onSelectCallback = (card, _) => bloc.selectCard(room, card);
+                  }
+
                   // Card Picker
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
 
                       // Indications
-                      () {
-                        Color color;
-                        String text;
-
-                        if (phaseNumber == 1) {
-                          color = isMainPlayer ? Colors.greenAccent : Colors.grey;
-                          text = isMainPlayer ? 'Choisir une carte, puis une phrase' : 'Attendre';
-                        } else if (phaseNumber == 2) {
-                          color = !isMainPlayer ? Colors.greenAccent : Colors.grey;
-                          text = !isMainPlayer ? 'Choisir une carte' : 'Attendre';
-                        }
-
-                        return Container(
-                          color: color,
-                          padding: EdgeInsets.all(10),
-                          alignment: Alignment.center,
-                          child: text != null ? Text(text) : null,
-                        );
-                      } (),
+                      Container(
+                        color: color,
+                        padding: EdgeInsets.all(10),
+                        alignment: Alignment.center,
+                        child: text != null ? Text(text) : null,
+                      ),
 
                       // Card Picker
                       Expanded(
                         child: CardPicker(
                           cards: player.cards,
-                          mustSelectSentence: phaseNumber == 1 && isMainPlayer,
-                          onSelected: phaseNumber == 1 && isMainPlayer
-                            ? (card, sentence) => bloc.setSentence(room, card, sentence)
-                            : null,
+                          mustSelectSentence: mustSelectSentence,
+                          onSelected: onSelectCallback,
                         ),
                       ),
                     ],
@@ -147,10 +156,12 @@ class WaitingLobby extends StatelessWidget {
   }
 }
 
+typedef CardPickerSelectCallback = void Function(String card, String sentence);
+
 class CardPicker extends StatefulWidget {
   final List<String> cards;
   final bool mustSelectSentence;
-  final void Function(String card, String sentence) onSelected;
+  final CardPickerSelectCallback onSelected;
 
   const CardPicker({Key key, this.cards, this.onSelected, this.mustSelectSentence}) : super(key: key);
 
@@ -275,16 +286,25 @@ class _CardPickerState extends State<CardPicker> {
   }
 }
 
-class GamePageBloc {
+class GamePageBloc with Disposable {
   final MainPageBloc mainBloc;
 
   final Stream<Room> roomStream;
+  StreamSubscription<Room> _roomStreamSubscription;
 
   final List<String> _cardDeck;   // Cards left in the pile/deck
 
   GamePageBloc(this.mainBloc) :
     roomStream = DatabaseService.getRoomStream(mainBloc.roomName),
-    _cardDeck = List.from(mainBloc.availableCards);
+    _cardDeck = List.from(mainBloc.availableCards) {
+    _roomStreamSubscription = roomStream.listen(onRoomUpdate);
+  }
+
+  void onRoomUpdate(Room room) {
+    var isMainPlayer = mainBloc.playerName == room.phase?.mainPlayerName;
+    if (isMainPlayer && room.phase.number == 2 && room.phase.playedCards.length == room.players.length)
+      _toPhase3(room);
+  }
 
   final _random = Random();
   String _drawCard() => _cardDeck.removeAt(_random.nextInt(_cardDeck.length));
@@ -307,18 +327,45 @@ class GamePageBloc {
   }
 
   Future<void> setSentence(Room room, String card, String sentence) async {
-    // Save new phase data
+    // Apply new phase data
     room.phase
       ..sentence = sentence
       ..playedCards[room.phase.mainPlayerName] = card
       ..number = 2;
 
+    // Remove played card and update DB
+    await _removePlayedCardAndSaveData(room, card);
+  }
+
+  Future<void> selectCard(Room room, String card) async {
+    // Apply new phase data
+    room.phase.playedCards[mainBloc.playerName] = card;
+
+    // Remove played card and update DB
+    await _removePlayedCardAndSaveData(room, card);
+  }
+
+  Future<void> _removePlayedCardAndSaveData(Room room, String card) async {
     // Remove played card from player's hand
-    var mainPlayer = room.mainPlayer;
-    mainPlayer.cards.remove(card);
+    var player = room.players[mainBloc.playerName];
+    player.cards.remove(card);
 
     // Update DB
     await DatabaseService.savePhase(room.name, room.phase);
-    await DatabaseService.savePlayer(room.name, mainPlayer);
+    await DatabaseService.savePlayer(room.name, player);
+  }
+
+  Future<void>  _toPhase3(Room room) async {
+    // Apply new phase data
+    room.phase.number = 3;
+
+    // Update DB
+    await DatabaseService.savePhase(room.name, room.phase);
+  }
+
+  @override
+  void dispose() {
+    _roomStreamSubscription.cancel();
+    super.dispose();
   }
 }
