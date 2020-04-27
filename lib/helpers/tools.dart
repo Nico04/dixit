@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:diacritic/diacritic.dart';
 import 'package:flash/flash.dart';
 import 'package:flutter/material.dart';
@@ -121,4 +123,16 @@ String plural(int count, String input) => '$count $input${count > 1 ? 's' : ''}'
 extension ExtendedString on String {
   /// Normalize a string by removing diacritics and transform to lower case
   String get normalized => removeDiacritics(this.toLowerCase());
+}
+
+extension ExtendedRandom on Random {
+  /// Generates a non-negative random integer uniformly distributed in the range
+  /// from 0, inclusive, to [max], exclusive.
+  ///
+  /// Implementation note: The default implementation supports [max] values
+  /// between 1 and (1<<32) inclusive.
+  int nextIntExtended(int max) {
+    //if ()
+    return (this.nextDouble() * max).toInt();
+  }
 }

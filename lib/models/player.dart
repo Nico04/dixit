@@ -5,7 +5,7 @@ part 'player.g.dart';
 @JsonSerializable()
 class Player {
   final String name;
-  final List<String> cards;
+  List<String> cards;
   final int score;
 
   Player(this.name, {this.cards, int score}) :

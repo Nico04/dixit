@@ -3,8 +3,11 @@ import 'package:dixit/models/_models.dart';
 import 'package:dixit/pages/_pages.dart';
 import 'package:dixit/resources/resources.dart';
 import 'package:dixit/services/database_service.dart';
-import 'package:firebase_database/firebase_database.dart';
+import 'package:dixit/services/storage_service.dart';
+import 'package:dixit/services/web_services.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:rxdart/rxdart.dart';
 
 class MainPage extends StatefulWidget {
   @override
@@ -14,7 +17,17 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   final _bloc = MainPageBloc();
 
+  final _playerNameController = TextEditingController();
   final _roomNameFocus = FocusNode();
+
+  @override
+  void initState() {
+    var playerName = StorageService.readPlayerName();
+    if (playerName != null)
+      _playerNameController.text = playerName;
+
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,6 +43,7 @@ class _MainPageState extends State<MainPage> {
               return Column(
                 children: <Widget>[
                   TextFormField(
+                    controller: _playerNameController,
                     decoration: InputDecoration(
                       labelText: 'Pseudo'
                     ),
@@ -50,9 +64,37 @@ class _MainPageState extends State<MainPage> {
                     onSaved: (value) => _bloc.roomName = value,
                   ),
                   AppResources.SpacerMedium,
-                  RaisedButton(
-                    child: Text('Rejoindre partie'),
-                    onPressed: () => _bloc.validate(context),
+                  StreamBuilder<bool>(
+                    stream: _bloc.isReady,
+                    initialData: _bloc.isReady.value,
+                    builder: (context, snapshot) {
+                      if (snapshot.hasError)
+                        return Column(
+                          children: <Widget>[
+                            Tooltip(
+                              child: Text('Une erreur est survenue'),
+                              message: snapshot.error.toString(),
+                            ),
+                            RaisedButton(
+                              child: Text('Re-essayer'),
+                              onPressed: _bloc.init,
+                            )
+                          ],
+                        );
+
+                      if (snapshot.data != true)
+                        return Column(
+                          children: <Widget>[
+                            Text('Le jeu est en cours de préparation'),
+                            CircularProgressIndicator(),
+                          ],
+                        );
+
+                      return RaisedButton(
+                        child: Text('Rejoindre partie'),
+                        onPressed: () => _bloc.validate(context),
+                      );
+                    }
                   )
                 ],
               );
@@ -64,9 +106,27 @@ class _MainPageState extends State<MainPage> {
   }
 }
 
-class MainPageBloc {
+class MainPageBloc with Disposable {
   String playerName;
   String roomName;
+
+  List<String> availableCards;
+
+  final isReady = BehaviorSubject.seeded(false);
+
+  MainPageBloc() {
+    init();
+  }
+
+  Future<void> init() async {
+    try {
+      isReady.add(false);   // Needed for when re-trying
+      availableCards = await WebServices.getCardsNames();
+      isReady.add(true);
+    } catch (e) {
+      isReady.addError(e);
+    }
+  }
 
   void validate(BuildContext context) async {
     // Clear focus
@@ -79,10 +139,15 @@ class MainPageBloc {
     else
       return;
 
+    // Save player name locally
+    StorageService.savePlayerName(playerName);    // Do not need to await
+
     // Get room
     var room = await DatabaseService.getRoom(roomName);
     if (room == null)
       room = Room(roomName);
+    else
+      roomName = room.name;   // Update field with true value (may be normalized)
 
     // Get player
     var player = room.players.firstWhere((p) => p.name.normalized == playerName.normalized, orElse: () => null);
@@ -96,12 +161,20 @@ class MainPageBloc {
       player = Player(playerName);
       room.players.add(player);
       await DatabaseService.saveRoom(room);
+    } else {
+      playerName = player.name;
     }
 
     // Go to room
-    navigateTo(context, () => GamePage(
-      room.name,
-      player.name,
+    navigateTo(context, () => Provider.value(
+      value: this,
+      child: GamePage(),
     ));
+  }
+
+  @override
+  void dispose() {
+    isReady.close();
+    super.dispose();
   }
 }

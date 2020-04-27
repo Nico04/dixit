@@ -8,7 +8,7 @@ class Room {
   final String name;
   final List<Player> players;
   final Phase phase;
-  final int turn;
+  int turn;
 
   Room(this.name, {List<Player> players, this.phase, int turn}) :
     this.players = players ?? List<Player>(),
