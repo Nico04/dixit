@@ -6,17 +6,16 @@ part of 'phase.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-Phase _$PhaseFromJson(Map json) {
+Phase _$PhaseFromJson(Map<String, dynamic> json) {
   return Phase(
     json['mainPlayerName'] as String,
     number: json['number'] as int,
     sentence: json['sentence'] as String,
-    playedCards: (json['playedCards'] as Map)?.map(
-      (k, e) => MapEntry(k as String, e as String),
+    playedCards: (json['playedCards'] as Map<String, dynamic>)?.map(
+      (k, e) => MapEntry(k, e as String),
     ),
-    votes: (json['votes'] as Map)?.map(
-      (k, e) =>
-          MapEntry(k as String, (e as List)?.map((e) => e as String)?.toList()),
+    votes: (json['votes'] as Map<String, dynamic>)?.map(
+      (k, e) => MapEntry(k, (e as List)?.map((e) => e as String)?.toList()),
     ),
   );
 }

@@ -18,6 +18,6 @@ class Room {
 
   bool get isGameStarted => turn > 0;
 
-  factory Room.fromJson(Map<dynamic, dynamic> json) => json == null ? null : _$RoomFromJson(json);
+  factory Room.fromJson(Map<String, dynamic> json) => json == null ? null : _$RoomFromJson(json);
   Map<String, dynamic> toJson() => _$RoomToJson(this);
 }

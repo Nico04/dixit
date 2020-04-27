@@ -6,7 +6,7 @@ part of 'player.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-Player _$PlayerFromJson(Map json) {
+Player _$PlayerFromJson(Map<String, dynamic> json) {
   return Player(
     json['name'] as String,
     cards: (json['cards'] as List)?.map((e) => e as String)?.toList(),

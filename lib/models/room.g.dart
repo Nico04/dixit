@@ -6,14 +6,16 @@ part of 'room.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-Room _$RoomFromJson(Map json) {
+Room _$RoomFromJson(Map<String, dynamic> json) {
   return Room(
     json['name'] as String,
-    players: (json['players'] as Map)?.map(
-      (k, e) =>
-          MapEntry(k as String, e == null ? null : Player.fromJson(e as Map)),
+    players: (json['players'] as Map<String, dynamic>)?.map(
+      (k, e) => MapEntry(
+          k, e == null ? null : Player.fromJson(e as Map<String, dynamic>)),
     ),
-    phase: json['phase'] == null ? null : Phase.fromJson(json['phase'] as Map),
+    phase: json['phase'] == null
+        ? null
+        : Phase.fromJson(json['phase'] as Map<String, dynamic>),
     turn: json['turn'] as int,
   );
 }

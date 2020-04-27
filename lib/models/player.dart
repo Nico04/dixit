@@ -11,6 +11,6 @@ class Player {
   Player(this.name, {this.cards, int score}) :
     this.score = score ?? 0;
 
-  factory Player.fromJson(Map<dynamic, dynamic> json) => json == null ? null : _$PlayerFromJson(json);
+  factory Player.fromJson(Map<String, dynamic> json) => json == null ? null : _$PlayerFromJson(json);
   Map<String, dynamic> toJson() => _$PlayerToJson(this);
 }

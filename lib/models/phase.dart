@@ -15,6 +15,6 @@ class Phase {
     this.playedCards = playedCards ?? Map<String, String>(),
     this.votes = votes ?? Map<String, List<String>>();
 
-  factory Phase.fromJson(Map<dynamic, dynamic> json) => json == null ? null : _$PhaseFromJson(json);
+  factory Phase.fromJson(Map<String, dynamic> json) => json == null ? null : _$PhaseFromJson(json);
   Map<String, dynamic> toJson() => _$PhaseToJson(this);
 }
