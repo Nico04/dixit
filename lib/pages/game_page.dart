@@ -68,14 +68,23 @@ class GamePage extends StatelessWidget {
                     mustSelectSentence = isMainPlayer;
                     if (isMainPlayer)
                       onSelectCallback = (card, sentence) => bloc.setSentence(room, card, sentence);
+                  }
 
-                  } else if (phaseNumber == 2) {
+                  else if (phaseNumber == 2) {
                     var playerHasSelected = room.phase.playedCards.keys.contains(player.name);
                     var hasActionToDo = !isMainPlayer && !playerHasSelected;
                     color = hasActionToDo ? Colors.greenAccent : Colors.grey;
                     text = hasActionToDo ? 'Choisir une carte :\n${room.phase.sentence}' : 'Attendre';
                     if (hasActionToDo)
                       onSelectCallback = (card, _) => bloc.selectCard(room, card);
+                  }
+
+                  else if (phaseNumber == 3) {
+                    var playerHasVoted = room.phase.votes.values.any((players) => players.contains(player.name));
+                    color = !playerHasVoted ? Colors.greenAccent : Colors.grey;
+                    text = !playerHasVoted ? 'Voter pour une carte :\n${room.phase.sentence}' : 'Attendre';
+                    if (!playerHasVoted)
+                      onSelectCallback = (card, _) => bloc.voteCard(room, card);
                   }
 
                   // Card Picker
@@ -94,7 +103,8 @@ class GamePage extends StatelessWidget {
                       // Card Picker
                       Expanded(
                         child: CardPicker(
-                          cards: player.cards,
+                          cards: room.phase.number == 3 ? room.phase.playedCards.values.toList(growable: false) : player.cards,
+                          excludedCard: room.phase.number == 3 ? room.phase.playedCards[player.name] : null,
                           mustSelectSentence: mustSelectSentence,
                           onSelected: onSelectCallback,
                         ),
@@ -160,10 +170,11 @@ typedef CardPickerSelectCallback = void Function(String card, String sentence);
 
 class CardPicker extends StatefulWidget {
   final List<String> cards;
+  final String excludedCard;
   final bool mustSelectSentence;
   final CardPickerSelectCallback onSelected;
 
-  const CardPicker({Key key, this.cards, this.onSelected, this.mustSelectSentence}) : super(key: key);
+  const CardPicker({Key key, this.cards, this.onSelected, this.mustSelectSentence, this.excludedCard}) : super(key: key);
 
   @override
   _CardPickerState createState() => _CardPickerState();
@@ -255,7 +266,9 @@ class _CardPickerState extends State<CardPicker> {
                           AppResources.SpacerSmall,
                           RaisedButton(
                             child: Text('Valider'),
-                            onPressed: () => validate(context),
+                            onPressed: widget.cards[_imageIndex] != widget.excludedCard
+                              ? () => validate(context)
+                              : null,
                           ),
                         ],
                       );
@@ -302,8 +315,14 @@ class GamePageBloc with Disposable {
 
   void onRoomUpdate(Room room) {
     var isMainPlayer = mainBloc.playerName == room.phase?.mainPlayerName;
+
+    // If everyone has chosen a card, go to phase 3
     if (isMainPlayer && room.phase.number == 2 && room.phase.playedCards.length == room.players.length)
-      _toPhase3(room);
+      _toPhase(room, 3);
+
+    // If everyone has voted a card, go to phase 4
+    if (isMainPlayer && room.phase.number == 3 && room.phase.votes.values.fold(0, (sum, players) => sum + players.length) == room.players.length)
+      _toPhase(room, 4);
   }
 
   final _random = Random();
@@ -355,12 +374,20 @@ class GamePageBloc with Disposable {
     await DatabaseService.savePlayer(room.name, player);
   }
 
-  Future<void>  _toPhase3(Room room) async {
+  Future<void> voteCard(Room room, String card) async {
     // Apply new phase data
-    room.phase.number = 3;
+    room.phase.votes[card] = [mainBloc.playerName];   //Don't need to merge with other vote as the database update already merge
 
     // Update DB
     await DatabaseService.savePhase(room.name, room.phase);
+  }
+
+  Future<void> _toPhase(Room room, int phaseNumber) async {
+    // Apply new phase data
+    room.phase.number = phaseNumber;
+
+    // Update DB
+    await DatabaseService.savePhaseNumber(room.name, room.phase.number);
   }
 
   @override

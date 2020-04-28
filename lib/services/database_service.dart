@@ -27,6 +27,11 @@ class DatabaseService {
       'phase': phase.toJson(),
     }, merge: true);
 
+  static Future<void> savePhaseNumber(String roomName, int phaseNumber) async =>
+    await _getRoomRef(roomName).updateData({
+      'phase.number': phaseNumber,
+    });
+
   static Future<void> savePlayer(String roomName, Player player) async =>
     await _getRoomRef(roomName).updateData({
       'players.${player.name}': player.toJson()
