@@ -322,6 +322,7 @@ class GamePageBloc with Disposable {
   final Stream<Room> roomStream;
   StreamSubscription<Room> _roomStreamSubscription;
 
+  // TODO Need to be shared on the room on the DB !
   final List<String> _cardDeck;   // Cards left in the pile/deck
 
   GamePageBloc(this.mainBloc) :
@@ -331,6 +332,8 @@ class GamePageBloc with Disposable {
   }
 
   void onRoomUpdate(Room room) {
+    print('onRoomUpdate');
+
     var isStoryteller = mainBloc.playerName == room.phase?.storytellerName;
 
     // If everyone has chosen a card, go to phase 3
@@ -392,11 +395,8 @@ class GamePageBloc with Disposable {
   }
 
   Future<void> _toVotePhase(Room room) async {
-    // Apply new phase data
-    room.phase.number = Phase.Phase3_vote;
-
-    // Update DB
-    await DatabaseService.savePhaseNumber(room.name, room.phase.number);
+    // Directly update DB
+    await DatabaseService.savePhaseNumber(room.name, Phase.Phase3_vote);
   }
 
   Future<void> voteCard(Room room, String card) async {
