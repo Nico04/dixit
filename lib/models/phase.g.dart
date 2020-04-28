@@ -12,10 +12,11 @@ Phase _$PhaseFromJson(Map<String, dynamic> json) {
     number: json['number'] as int,
     sentence: json['sentence'] as String,
     playedCards: (json['playedCards'] as Map<String, dynamic>)?.map(
-      (k, e) => MapEntry(k, e as String),
+      (k, e) => MapEntry(k, e as int),
     ),
     votes: (json['votes'] as Map<String, dynamic>)?.map(
-      (k, e) => MapEntry(k, (e as List)?.map((e) => e as String)?.toList()),
+      (k, e) => MapEntry(
+          int.parse(k), (e as List)?.map((e) => e as String)?.toList()),
     ),
   );
 }
@@ -33,6 +34,7 @@ Map<String, dynamic> _$PhaseToJson(Phase instance) {
   writeNotNull('number', instance.number);
   writeNotNull('sentence', instance.sentence);
   writeNotNull('playedCards', instance.playedCards);
-  writeNotNull('votes', instance.votes);
+  writeNotNull(
+      'votes', instance.votes?.map((k, e) => MapEntry(k.toString(), e)));
   return val;
 }

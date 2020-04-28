@@ -1,20 +1,20 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'player.dart';
+part of 'card_data.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-Player _$PlayerFromJson(Map<String, dynamic> json) {
-  return Player(
-    json['name'] as String,
-    cards: (json['cards'] as List)?.map((e) => e as int)?.toList(),
-    score: json['score'] as int,
+CardData _$CardDataFromJson(Map<String, dynamic> json) {
+  return CardData(
+    json['id'] as int,
+    json['filename'] as String,
+    json['blurHash'] as String,
   );
 }
 
-Map<String, dynamic> _$PlayerToJson(Player instance) {
+Map<String, dynamic> _$CardDataToJson(CardData instance) {
   final val = <String, dynamic>{};
 
   void writeNotNull(String key, dynamic value) {
@@ -23,8 +23,8 @@ Map<String, dynamic> _$PlayerToJson(Player instance) {
     }
   }
 
-  writeNotNull('name', instance.name);
-  writeNotNull('cards', instance.cards);
-  writeNotNull('score', instance.score);
+  writeNotNull('id', instance.id);
+  writeNotNull('filename', instance.filename);
+  writeNotNull('blurHash', instance.blurHash);
   return val;
 }

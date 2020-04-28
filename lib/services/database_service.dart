@@ -27,9 +27,9 @@ class DatabaseService {
       'phase': phase.toJson(),
     }, merge: true);
   
-  static Future<void> addVote(String roomName, String playerName, String card) async =>
+  static Future<void> addVote(String roomName, String playerName, int card) async =>
     await _getRoomRef(roomName).updateData({
-      'phase.votes.$card': FieldValue.arrayUnion([card]),
+      'phase.votes.$card': FieldValue.arrayUnion([playerName]),
     });
 
   static Future<void> savePhaseNumber(String roomName, int phaseNumber) async =>

@@ -110,7 +110,7 @@ class MainPageBloc with Disposable {
   String playerName;
   String roomName;
 
-  List<String> availableCards;     // All existing cards
+  Map<int, CardData> cards;     // All existing cards
 
   final isReady = BehaviorSubject.seeded(false);
 
@@ -121,7 +121,7 @@ class MainPageBloc with Disposable {
   Future<void> init() async {
     try {
       isReady.add(false);   // Needed for when re-trying
-      availableCards = await WebServices.getCardsNames();
+      cards = await WebServices.getCardsNames();
       isReady.add(true);
     } catch (e) {
       isReady.addError(e);
@@ -145,7 +145,7 @@ class MainPageBloc with Disposable {
     // Get room
     var room = await DatabaseService.getRoom(roomName);
     if (room == null)
-      room = Room(roomName);
+      room = Room(roomName, cards.keys.toList());
     else
       roomName = room.name;   // Update field with true value (may be normalized)
 
@@ -166,9 +166,10 @@ class MainPageBloc with Disposable {
     }
 
     // Go to room
-    navigateTo(context, () => Provider.value(
-      value: this,
-      child: GamePage(),
+    navigateTo(context, () => GamePage(
+      playerName: playerName,
+      roomName: roomName,
+      cards: cards,
     ));
   }
 

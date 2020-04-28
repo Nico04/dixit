@@ -7,6 +7,7 @@ part 'room.g.dart';
 @JsonSerializable()
 class Room {
   final String name;    // Room name, may differ from the database key which is normalized
+  final List<int> cardDeck;   // Cards left in the pile/deck
   final Map<String, Player> players;    // <playerName, player>
   Phase phase;
   Phase previousPhase;  // Keep a ref to previous phase when starting a new turn
@@ -21,7 +22,7 @@ class Room {
   @JsonKey(fromJson: dateFromString, toJson: dateToString)
   DateTime endDate;
 
-  Room(this.name, {Map<String, Player> players, this.phase, this.previousPhase, int turn, DateTime startDate}) :
+  Room(this.name, this.cardDeck, {Map<String, Player> players, this.phase, this.previousPhase, int turn, DateTime startDate}) :
     this.players = players ?? Map<String, Player>(),
     this.turn = turn ?? 0,
     this.startDate = startDate ?? DateTime.now();

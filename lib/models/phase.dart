@@ -12,15 +12,15 @@ class Phase {
   final String storytellerName;   // Player name of the storyteller
   int number;
   String sentence;                // Storyteller's sentence
-  final Map<String, String> playedCards;  // <playerName, card>
-  final Map<String, List<String>> votes;  // <card, List<playerName>>
+  final Map<String, int> playedCards;  // <playerName, cardId>
+  final Map<int, List<String>> votes;  // <cardId, List<playerName>>
 
   //TODO add Map<String, int> score; // <playerName, score>
 
-  Phase(this.storytellerName, {int number, this.sentence, Map<String, String> playedCards, Map<String, List<String>> votes}) :
+  Phase(this.storytellerName, {int number, this.sentence, Map<String, int> playedCards, Map<int, List<String>> votes}) :
     this.number = number ?? 1,
-    this.playedCards = playedCards ?? Map<String, String>(),
-    this.votes = votes ?? Map<String, List<String>>();
+    this.playedCards = playedCards ?? Map<String, int>(),
+    this.votes = votes ?? Map<int, List<String>>();
 
   factory Phase.fromJson(Map<String, dynamic> json) => json == null ? null : _$PhaseFromJson(json);
   Map<String, dynamic> toJson() => _$PhaseToJson(this);

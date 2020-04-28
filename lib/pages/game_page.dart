@@ -16,10 +16,20 @@ import '_pages.dart';
 const _pageContentPadding = EdgeInsets.all(15);
 
 class GamePage extends StatelessWidget {
+  final String playerName;
+  final String roomName;
+  final Map<int, CardData> cards;
+
+  const GamePage({Key key, this.playerName, this.roomName, this.cards}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return Provider<GamePageBloc>(
-      create: (context) => GamePageBloc(Provider.of<MainPageBloc>(context, listen: false)),
+      create: (context) => GamePageBloc(
+        playerName: playerName,
+        roomName: roomName,
+        cards: cards,
+      ),
       dispose: (_, bloc) => bloc.dispose(),
       child: Consumer<GamePageBloc>(
         builder: (context, bloc, _) {
@@ -31,7 +41,7 @@ class GamePage extends StatelessWidget {
             ),
             child: Scaffold(
               appBar: AppBar(
-                title: Text('${bloc.mainBloc.playerName} @ ${bloc.mainBloc.roomName}'),
+                title: Text('${bloc.playerName} @ ${bloc.roomName}'),
               ),
               body: StreamBuilder<Room>(
                 stream: bloc.roomStream,
@@ -40,9 +50,11 @@ class GamePage extends StatelessWidget {
 
                   // If data is not available
                   if (room == null)
-                    return CircularProgressIndicator();
+                    return Center(
+                      child: CircularProgressIndicator()
+                    );
 
-                  var player = room.players[bloc.mainBloc.playerName];
+                  var player = room.players[bloc.playerName];
                   var isHost = player.name == room.players.keys.first;
 
                   // WaitingLobby
@@ -110,10 +122,12 @@ class GamePage extends StatelessWidget {
                       // Card Picker
                       Expanded(
                         child: CardPicker(
-                          cards: room.phase.number == Phase.Phase3_vote
-                            ? room.phase.playedCards.values.toList(growable: false)
-                            : player.cards,
-                          excludedCard: room.phase.number == Phase.Phase3_vote ? room.phase.playedCards[player.name] : null,
+                          cards: bloc.getCardDataFromIds(
+                            room.phase.number == Phase.Phase3_vote
+                              ? room.phase.playedCards.values.toList(growable: false)
+                              : player.cards
+                            ),
+                          excludedCardId: room.phase.number == Phase.Phase3_vote ? room.phase.playedCards[player.name] : null,
                           mustSelectSentence: mustSelectSentence,
                           onSelected: onSelectCallback,
                         ),
@@ -175,22 +189,22 @@ class WaitingLobby extends StatelessWidget {
   }
 }
 
-typedef CardPickerSelectCallback = void Function(String card, String sentence);
+typedef CardPickerSelectCallback = void Function(int card, String sentence);
 
 class CardPicker extends StatefulWidget {
-  final List<String> cards;
-  final String excludedCard;
+  final List<CardData> cards;
+  final int excludedCardId;
   final bool mustSelectSentence;
   final CardPickerSelectCallback onSelected;
 
-  const CardPicker({Key key, this.cards, this.onSelected, this.mustSelectSentence, this.excludedCard}) : super(key: key);
+  const CardPicker({Key key, this.cards, this.onSelected, this.mustSelectSentence, this.excludedCardId}) : super(key: key);
 
   @override
   _CardPickerState createState() => _CardPickerState();
 }
 
 class _CardPickerState extends State<CardPicker> {
-  int _imageIndex = 0;
+  int _currentCardIndex = 0;
   String _sentence;
 
   @override
@@ -210,7 +224,7 @@ class _CardPickerState extends State<CardPicker> {
                     scrollPhysics: const BouncingScrollPhysics(),
                     pageOptions: widget.cards.map((card) {
                       return PhotoViewGalleryPageOptions(
-                        imageProvider: NetworkImage(WebServices.getCardUrl(card)),
+                        imageProvider: NetworkImage(WebServices.getCardUrl(card.filename)),
                         initialScale: PhotoViewComputedScale.contained * 0.8,
                         minScale: PhotoViewComputedScale.contained * 0.5,
                         maxScale: PhotoViewComputedScale.contained * 1.5,
@@ -233,7 +247,7 @@ class _CardPickerState extends State<CardPicker> {
                     ),
                     onPageChanged: (index) {
                       setState(() {
-                        _imageIndex = index;
+                        _currentCardIndex = index;
                       });
                     },
                   ),
@@ -242,7 +256,7 @@ class _CardPickerState extends State<CardPicker> {
                   Positioned(
                     right: 10,
                     bottom: 10,
-                    child: Text('Carte ${_imageIndex + 1} / ${widget.cards.length}'),
+                    child: Text('Carte ${_currentCardIndex + 1} / ${widget.cards.length}'),
                   ),
 
                 ],
@@ -275,7 +289,7 @@ class _CardPickerState extends State<CardPicker> {
                           AppResources.SpacerSmall,
                           RaisedButton(
                             child: Text('Valider'),
-                            onPressed: widget.cards[_imageIndex] != widget.excludedCard
+                            onPressed: widget.cards[_currentCardIndex].id != widget.excludedCardId
                               ? () => validate(context)
                               : null,
                           ),
@@ -304,7 +318,7 @@ class _CardPickerState extends State<CardPicker> {
       return;
 
     // Callback
-    widget.onSelected(widget.cards[_imageIndex], _sentence);
+    widget.onSelected(widget.cards[_currentCardIndex].id, _sentence);
   }
 }
 
@@ -317,24 +331,22 @@ class Scores extends StatelessWidget {
 
 
 class GamePageBloc with Disposable {
-  final MainPageBloc mainBloc;
+  final String playerName;
+  final String roomName;
+  final Map<int, CardData> cards;
 
   final Stream<Room> roomStream;
   StreamSubscription<Room> _roomStreamSubscription;
 
-  // TODO Need to be shared on the room on the DB !
-  final List<String> _cardDeck;   // Cards left in the pile/deck
-
-  GamePageBloc(this.mainBloc) :
-    roomStream = DatabaseService.getRoomStream(mainBloc.roomName),
-    _cardDeck = List.from(mainBloc.availableCards) {
+  GamePageBloc({this.playerName, this.roomName, this.cards}) :
+    roomStream = DatabaseService.getRoomStream(roomName) {
     _roomStreamSubscription = roomStream.listen(onRoomUpdate);
   }
 
   void onRoomUpdate(Room room) {
     print('onRoomUpdate');
 
-    var isStoryteller = mainBloc.playerName == room.phase?.storytellerName;
+    var isStoryteller = playerName == room.phase?.storytellerName;
 
     // If everyone has chosen a card, go to phase 3
     if (isStoryteller && room.phase.number == Phase.Phase2_cardSelect && room.phase.playedCards.length == room.players.length)
@@ -345,13 +357,15 @@ class GamePageBloc with Disposable {
       _toScoresPhase(room);
   }
 
+  List<CardData> getCardDataFromIds(List<int> cardsIds) => cardsIds.map((id) => cards[id]).toList(growable: false);
+
   final _random = Random();
-  String _drawCard() => _cardDeck.removeAt(_random.nextInt(_cardDeck.length));
+  int _drawCard(Room room) => room.cardDeck.removeAt(_random.nextInt(room.cardDeck.length));
   
   Future<void> startGame(Room room) async {
     // Draw card for each player
     for (var player in room.players.values)
-      player.cards = List.generate(6, (_) => _drawCard());
+      player.cards = List.generate(6, (_) => _drawCard(room));
 
     // First turn
     room.turn = 1;
@@ -365,7 +379,7 @@ class GamePageBloc with Disposable {
     await DatabaseService.saveRoom(room);
   }
 
-  Future<void> setSentence(Room room, String card, String sentence) async {
+  Future<void> setSentence(Room room, int card, String sentence) async {
     // Apply new phase data
     room.phase
       ..sentence = sentence
@@ -376,17 +390,17 @@ class GamePageBloc with Disposable {
     await _removePlayedCardAndSaveData(room, card);
   }
 
-  Future<void> selectCard(Room room, String card) async {
+  Future<void> selectCard(Room room, int card) async {
     // Apply new phase data
-    room.phase.playedCards[mainBloc.playerName] = card;
+    room.phase.playedCards[playerName] = card;
 
     // Remove played card and update DB
     await _removePlayedCardAndSaveData(room, card);
   }
 
-  Future<void> _removePlayedCardAndSaveData(Room room, String card) async {
+  Future<void> _removePlayedCardAndSaveData(Room room, int card) async {
     // Remove played card from player's hand
-    var player = room.players[mainBloc.playerName];
+    var player = room.players[playerName];
     player.cards.remove(card);
 
     // Update DB
@@ -399,9 +413,9 @@ class GamePageBloc with Disposable {
     await DatabaseService.savePhaseNumber(room.name, Phase.Phase3_vote);
   }
 
-  Future<void> voteCard(Room room, String card) async {
+  Future<void> voteCard(Room room, int card) async {
     // Vote directly using DB
-    await DatabaseService.addVote(room.name, mainBloc.playerName, card);
+    await DatabaseService.addVote(room.name, playerName, card);
   }
 
   Future<void> _toScoresPhase(Room room) async {
@@ -464,7 +478,7 @@ class GamePageBloc with Disposable {
       room.phase = Phase(nextStoryteller);
 
       // Draw cards
-      room.players.forEach((_, p) => p.cards.add(_drawCard()));
+      room.players.forEach((_, p) => p.cards.add(_drawCard(room)));
 
       // Next turn
       room.turn ++;

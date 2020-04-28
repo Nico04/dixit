@@ -2,17 +2,22 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import 'package:dixit/models/_models.dart';
+
 class WebServices {
   static const _cardsBaseUrl = "https://nico04.github.io/dixit/cards/";
 
-  static Future<List<String>> getCardsNames() async {
+  static Future<Map<int, CardData>> getCardsNames() async {
     var response = await http.get(
       Uri.encodeFull(_cardsBaseUrl + "cards.json")
     );
 
     var result = _processResponse<List<dynamic>>(response);
 
-    return result.cast();
+    return Map.fromEntries(result.map((cardJson) {
+      var card = CardData.fromJson(cardJson);
+      return MapEntry(card.id, card);
+    }));
   }
 
   static getCardUrl(String fileName) => _cardsBaseUrl + fileName;
