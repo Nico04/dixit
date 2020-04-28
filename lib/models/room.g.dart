@@ -20,7 +20,8 @@ Room _$RoomFromJson(Map<String, dynamic> json) {
         ? null
         : Phase.fromJson(json['previousPhase'] as Map<String, dynamic>),
     turn: json['turn'] as int,
-  );
+    startDate: dateFromString(json['startDate'] as String),
+  )..endDate = dateFromString(json['endDate'] as String);
 }
 
 Map<String, dynamic> _$RoomToJson(Room instance) {
@@ -38,5 +39,7 @@ Map<String, dynamic> _$RoomToJson(Room instance) {
   writeNotNull('phase', instance.phase?.toJson());
   writeNotNull('previousPhase', instance.previousPhase?.toJson());
   writeNotNull('turn', instance.turn);
+  writeNotNull('startDate', dateToString(instance.startDate));
+  writeNotNull('endDate', dateToString(instance.endDate));
   return val;
 }

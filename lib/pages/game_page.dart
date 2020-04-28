@@ -56,69 +56,71 @@ class GamePage extends StatelessWidget {
                   var isStoryteller = player.name == room.phase.storytellerName;
                   var phaseNumber = room.phase.number;
 
-                  // Card Picker
-                  if (phaseNumber <= 3) {
-                    // Prepare content
-                    Color color;
-                    String text;
-                    bool mustSelectSentence = false;
-                    CardPickerSelectCallback onSelectCallback;
+                  // Prepare content
+                  Color color;
+                  String text;
+                  bool mustSelectSentence = false;
+                  CardPickerSelectCallback onSelectCallback;
 
-                    if (phaseNumber == 1) {
-                      color = isStoryteller ? Colors.greenAccent : Colors.grey;
-                      text = isStoryteller ? 'Choisir une carte, puis une phrase' : 'Attendre';
-                      mustSelectSentence = isStoryteller;
-                      if (isStoryteller)
-                        onSelectCallback = (card, sentence) => bloc.setSentence(room, card, sentence);
-                    }
-
-                    else if (phaseNumber == 2) {
-                      var playerHasSelected = room.phase.playedCards.keys.contains(player.name);
-                      var hasActionToDo = !isStoryteller && !playerHasSelected;
-                      color = hasActionToDo ? Colors.greenAccent : Colors.grey;
-                      text = hasActionToDo ? 'Choisir une carte :\n${room.phase.sentence}' : 'Attendre';
-                      if (hasActionToDo)
-                        onSelectCallback = (card, _) => bloc.selectCard(room, card);
-                    }
-
-                    else if (phaseNumber == 3) {
-                      var playerHasVoted = room.phase.votes.values.any((players) => players.contains(player.name));
-                      color = !playerHasVoted ? Colors.greenAccent : Colors.grey;
-                      text = !playerHasVoted ? 'Voter pour une carte :\n${room.phase.sentence}' : 'Attendre';
-                      if (!playerHasVoted)
-                        onSelectCallback = (card, _) => bloc.voteCard(room, card);
-                    }
-
-                    // Card Picker
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: <Widget>[
-
-                        // Indications
-                        Container(
-                          color: color,
-                          padding: EdgeInsets.all(10),
-                          alignment: Alignment.center,
-                          child: text != null ? Text(text) : null,
-                        ),
-
-                        // Card Picker
-                        Expanded(
-                          child: CardPicker(
-                            cards: room.phase.number == 3
-                              ? room.phase.playedCards.values.toList(growable: false)
-                              : player.cards,
-                            excludedCard: room.phase.number == 3 ? room.phase.playedCards[player.name] : null,
-                            mustSelectSentence: mustSelectSentence,
-                            onSelected: onSelectCallback,
-                          ),
-                        ),
-                      ],
-                    );
+                  if (phaseNumber == Phase.Phase1_storytellerSentence) {
+                    color = isStoryteller ? Colors.greenAccent : Colors.grey;
+                    text = isStoryteller ? 'Choisir une carte, puis une phrase' : 'Attendre';
+                    mustSelectSentence = isStoryteller;
+                    if (isStoryteller)
+                      onSelectCallback = (card, sentence) => bloc.setSentence(room, card, sentence);
                   }
 
-                  // Results
-                  return Text('r');
+                  else if (phaseNumber == Phase.Phase2_cardSelect) {
+                    var playerHasSelected = room.phase.playedCards.keys.contains(player.name);
+                    var hasActionToDo = !isStoryteller && !playerHasSelected;
+                    color = hasActionToDo ? Colors.greenAccent : Colors.grey;
+                    text = hasActionToDo ? 'Choisir une carte :\n${room.phase.sentence}' : 'Attendre';
+                    if (hasActionToDo)
+                      onSelectCallback = (card, _) => bloc.selectCard(room, card);
+                  }
+
+                  else if (phaseNumber == Phase.Phase3_vote) {
+                    var playerHasVoted = room.phase.votes.values.any((players) => players.contains(player.name));
+                    color = !playerHasVoted ? Colors.greenAccent : Colors.grey;
+                    text = !playerHasVoted ? 'Voter pour une carte :\n${room.phase.sentence}' : 'Attendre';
+                    if (!playerHasVoted)
+                      onSelectCallback = (card, _) => bloc.voteCard(room, card);
+                  }
+
+                  /*
+                  else if (phaseNumber == Phase.Phase4_scores) {
+                    color = !playerHasVoted ? Colors.greenAccent : Colors.grey;
+                    text = !playerHasVoted ? 'Voter pour une carte :\n${room.phase.sentence}' : 'Attendre';
+                    if (!playerHasVoted)
+                      onSelectCallback = (card, _) => bloc.voteCard(room, card);
+                  }*/
+
+                  // Card Picker
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+
+                      // Indications
+                      Container(
+                        color: color,
+                        padding: EdgeInsets.all(10),
+                        alignment: Alignment.center,
+                        child: text != null ? Text(text) : null,
+                      ),
+
+                      // Card Picker
+                      Expanded(
+                        child: CardPicker(
+                          cards: room.phase.number == Phase.Phase3_vote
+                            ? room.phase.playedCards.values.toList(growable: false)
+                            : player.cards,
+                          excludedCard: room.phase.number == Phase.Phase3_vote ? room.phase.playedCards[player.name] : null,
+                          mustSelectSentence: mustSelectSentence,
+                          onSelected: onSelectCallback,
+                        ),
+                      ),
+                    ],
+                  );
                 }
               ),
             ),
@@ -307,6 +309,14 @@ class _CardPickerState extends State<CardPicker> {
   }
 }
 
+class Scores extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Text('r');
+  }
+}
+
+
 class GamePageBloc with Disposable {
   final MainPageBloc mainBloc;
 
@@ -325,12 +335,12 @@ class GamePageBloc with Disposable {
     var isStoryteller = mainBloc.playerName == room.phase?.storytellerName;
 
     // If everyone has chosen a card, go to phase 3
-    if (isStoryteller && room.phase.number == 2 && room.phase.playedCards.length == room.players.length)
-      _toPhase3(room);
+    if (isStoryteller && room.phase.number == Phase.Phase2_cardSelect && room.phase.playedCards.length == room.players.length)
+      _toVotehase(room);
 
     // If everyone has voted a card, go to phase 4
-    if (isStoryteller && room.phase.number == 3 && room.phase.votes.values.fold(0, (sum, players) => sum + players.length) == room.players.length)
-      _toPhase4(room);
+    if (isStoryteller && room.phase.number == Phase.Phase3_vote && room.phase.votes.values.fold(0, (sum, players) => sum + players.length) == room.players.length)
+      _toScoresPhase(room);
   }
 
   final _random = Random();
@@ -358,7 +368,7 @@ class GamePageBloc with Disposable {
     room.phase
       ..sentence = sentence
       ..playedCards[room.phase.storytellerName] = card
-      ..number = 2;
+      ..number = Phase.Phase2_cardSelect;
 
     // Remove played card and update DB
     await _removePlayedCardAndSaveData(room, card);
@@ -382,9 +392,9 @@ class GamePageBloc with Disposable {
     await DatabaseService.savePlayer(room.name, player);
   }
 
-  Future<void> _toPhase3(Room room) async {
+  Future<void> _toVotehase(Room room) async {
     // Apply new phase data
-    room.phase.number = 3;
+    room.phase.number = Phase.Phase3_vote;
 
     // Update DB
     await DatabaseService.savePhaseNumber(room.name, room.phase.number);
@@ -398,7 +408,7 @@ class GamePageBloc with Disposable {
     await DatabaseService.savePhase(room.name, room.phase);
   }
 
-  Future<void> _toPhase4(Room room) async {
+  Future<void> _toScoresPhase(Room room) async {
     // ---- Count score ----
     var storytellerName = room.phase.storytellerName;
     var votes = room.phase.votes;
@@ -437,7 +447,32 @@ class GamePageBloc with Disposable {
     }
 
     // ---- Apply new phase data -----
-    room.phase.number = 4;
+    // Phase number
+    room.phase.number = Phase.Phase4_scores;
+
+    // Move phase
+    room.previousPhase = room.phase;
+    room.phase = null;
+
+    // End game
+    if (room.players.values.any((player) => player.score >= 30)) {
+      room.endDate = DateTime.now();
+    }
+
+    // Start new turn
+    else {
+      // New phase
+      var playersNames = room.players.keys.toList(growable: false);
+      var storytellerIndex = playersNames.indexOf(room.previousPhase.storytellerName);
+      var nextStoryteller = playersNames[(storytellerIndex + 1) % playersNames.length];
+      room.phase = Phase(nextStoryteller);
+
+      // Draw cards
+      room.players.forEach((_, p) => p.cards.add(_drawCard()));
+
+      // Next turn
+      room.turn ++;
+    }
 
     // ---- Update DB -----
     await DatabaseService.saveRoom(room);

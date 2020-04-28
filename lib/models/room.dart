@@ -1,3 +1,4 @@
+import 'package:dixit/helpers/tools.dart';
 import 'package:json_annotation/json_annotation.dart';
 import '_models.dart';
 
@@ -11,9 +12,19 @@ class Room {
   Phase previousPhase;  // Keep a ref to previous phase when starting a new turn
   int turn;
 
-  Room(this.name, {Map<String, Player> players, this.phase, this.previousPhase, int turn}) :
+  //TODO use Firestore Timestamp with FieldValue.serverTimestamp(). But it breaks fromJson.
+  // see https://stackoverflow.com/questions/60793441/how-do-i-resolve-type-timestamp-is-not-a-subtype-of-type-string-in-type-cast
+  // see https://github.com/google/built_value.dart/issues/543
+  @JsonKey(fromJson: dateFromString, toJson: dateToString)
+  final DateTime startDate;
+
+  @JsonKey(fromJson: dateFromString, toJson: dateToString)
+  DateTime endDate;
+
+  Room(this.name, {Map<String, Player> players, this.phase, this.previousPhase, int turn, DateTime startDate}) :
     this.players = players ?? Map<String, Player>(),
-    this.turn = turn ?? 0;
+    this.turn = turn ?? 0,
+    this.startDate = startDate ?? DateTime.now();
 
   bool get isGameStarted => turn > 0;
 

@@ -120,6 +120,10 @@ void clearFocus(BuildContext context) {
 
 String plural(int count, String input) => '$count $input${count > 1 ? 's' : ''}';
 
+DateTime dateFromString(String dateString) => DateTime.tryParse(dateString ?? '')?.toLocal();
+
+String dateToString(DateTime date) => date?.toUtc()?.toIso8601String();
+
 extension ExtendedString on String {
   /// Normalize a string by removing diacritics and transform to lower case
   String get normalized => removeDiacritics(this.toLowerCase());

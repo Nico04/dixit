@@ -4,6 +4,11 @@ part 'phase.g.dart';
 
 @JsonSerializable()
 class Phase {
+  static const Phase1_storytellerSentence = 1;
+  static const Phase2_cardSelect = 2;
+  static const Phase3_vote = 3;
+  static const Phase4_scores = 4;
+
   final String storytellerName;   // Player name of the storyteller
   int number;
   String sentence;                // Storyteller's sentence
