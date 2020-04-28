@@ -87,8 +87,7 @@ class GamePage extends StatelessWidget {
                       onSelectCallback = (card, _) => bloc.voteCard(room, card);
                   }
 
-                  /*
-                  else if (phaseNumber == Phase.Phase4_scores) {
+                  /*else if (phaseNumber == Phase.Phase4_scores) {
                     color = !playerHasVoted ? Colors.greenAccent : Colors.grey;
                     text = !playerHasVoted ? 'Voter pour une carte :\n${room.phase.sentence}' : 'Attendre';
                     if (!playerHasVoted)
@@ -336,7 +335,7 @@ class GamePageBloc with Disposable {
 
     // If everyone has chosen a card, go to phase 3
     if (isStoryteller && room.phase.number == Phase.Phase2_cardSelect && room.phase.playedCards.length == room.players.length)
-      _toVotehase(room);
+      _toVotePhase(room);
 
     // If everyone has voted a card, go to phase 4
     if (isStoryteller && room.phase.number == Phase.Phase3_vote && room.phase.votes.values.fold(0, (sum, players) => sum + players.length) == room.players.length)
@@ -392,7 +391,7 @@ class GamePageBloc with Disposable {
     await DatabaseService.savePlayer(room.name, player);
   }
 
-  Future<void> _toVotehase(Room room) async {
+  Future<void> _toVotePhase(Room room) async {
     // Apply new phase data
     room.phase.number = Phase.Phase3_vote;
 
@@ -401,11 +400,8 @@ class GamePageBloc with Disposable {
   }
 
   Future<void> voteCard(Room room, String card) async {
-    // Apply new phase data
-    room.phase.votes[card] = [mainBloc.playerName];   //Don't need to merge with other vote as the database update already merge
-
-    // Update DB
-    await DatabaseService.savePhase(room.name, room.phase);
+    // Vote directly using DB
+    await DatabaseService.addVote(room.name, mainBloc.playerName, card);
   }
 
   Future<void> _toScoresPhase(Room room) async {

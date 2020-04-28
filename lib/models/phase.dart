@@ -15,6 +15,8 @@ class Phase {
   final Map<String, String> playedCards;  // <playerName, card>
   final Map<String, List<String>> votes;  // <card, List<playerName>>
 
+  //TODO add Map<String, int> score; // <playerName, score>
+
   Phase(this.storytellerName, {int number, this.sentence, Map<String, String> playedCards, Map<String, List<String>> votes}) :
     this.number = number ?? 1,
     this.playedCards = playedCards ?? Map<String, String>(),
