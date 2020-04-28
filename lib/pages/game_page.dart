@@ -56,61 +56,69 @@ class GamePage extends StatelessWidget {
                   var isMainPlayer = player.name == room.phase.mainPlayerName;
                   var phaseNumber = room.phase.number;
 
-                  // Prepare content
-                  Color color;
-                  String text;
-                  bool mustSelectSentence = false;
-                  CardPickerSelectCallback onSelectCallback;
-
-                  if (phaseNumber == 1) {
-                    color = isMainPlayer ? Colors.greenAccent : Colors.grey;
-                    text = isMainPlayer ? 'Choisir une carte, puis une phrase' : 'Attendre';
-                    mustSelectSentence = isMainPlayer;
-                    if (isMainPlayer)
-                      onSelectCallback = (card, sentence) => bloc.setSentence(room, card, sentence);
-                  }
-
-                  else if (phaseNumber == 2) {
-                    var playerHasSelected = room.phase.playedCards.keys.contains(player.name);
-                    var hasActionToDo = !isMainPlayer && !playerHasSelected;
-                    color = hasActionToDo ? Colors.greenAccent : Colors.grey;
-                    text = hasActionToDo ? 'Choisir une carte :\n${room.phase.sentence}' : 'Attendre';
-                    if (hasActionToDo)
-                      onSelectCallback = (card, _) => bloc.selectCard(room, card);
-                  }
-
-                  else if (phaseNumber == 3) {
-                    var playerHasVoted = room.phase.votes.values.any((players) => players.contains(player.name));
-                    color = !playerHasVoted ? Colors.greenAccent : Colors.grey;
-                    text = !playerHasVoted ? 'Voter pour une carte :\n${room.phase.sentence}' : 'Attendre';
-                    if (!playerHasVoted)
-                      onSelectCallback = (card, _) => bloc.voteCard(room, card);
-                  }
-
                   // Card Picker
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: <Widget>[
+                  if (phaseNumber <= 3) {
+                    // Prepare content
+                    Color color;
+                    String text;
+                    bool mustSelectSentence = false;
+                    CardPickerSelectCallback onSelectCallback;
 
-                      // Indications
-                      Container(
-                        color: color,
-                        padding: EdgeInsets.all(10),
-                        alignment: Alignment.center,
-                        child: text != null ? Text(text) : null,
-                      ),
+                    if (phaseNumber == 1) {
+                      color = isMainPlayer ? Colors.greenAccent : Colors.grey;
+                      text = isMainPlayer ? 'Choisir une carte, puis une phrase' : 'Attendre';
+                      mustSelectSentence = isMainPlayer;
+                      if (isMainPlayer)
+                        onSelectCallback = (card, sentence) => bloc.setSentence(room, card, sentence);
+                    }
 
-                      // Card Picker
-                      Expanded(
-                        child: CardPicker(
-                          cards: room.phase.number == 3 ? room.phase.playedCards.values.toList(growable: false) : player.cards,
-                          excludedCard: room.phase.number == 3 ? room.phase.playedCards[player.name] : null,
-                          mustSelectSentence: mustSelectSentence,
-                          onSelected: onSelectCallback,
+                    else if (phaseNumber == 2) {
+                      var playerHasSelected = room.phase.playedCards.keys.contains(player.name);
+                      var hasActionToDo = !isMainPlayer && !playerHasSelected;
+                      color = hasActionToDo ? Colors.greenAccent : Colors.grey;
+                      text = hasActionToDo ? 'Choisir une carte :\n${room.phase.sentence}' : 'Attendre';
+                      if (hasActionToDo)
+                        onSelectCallback = (card, _) => bloc.selectCard(room, card);
+                    }
+
+                    else if (phaseNumber == 3) {
+                      var playerHasVoted = room.phase.votes.values.any((players) => players.contains(player.name));
+                      color = !playerHasVoted ? Colors.greenAccent : Colors.grey;
+                      text = !playerHasVoted ? 'Voter pour une carte :\n${room.phase.sentence}' : 'Attendre';
+                      if (!playerHasVoted)
+                        onSelectCallback = (card, _) => bloc.voteCard(room, card);
+                    }
+
+                    // Card Picker
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+
+                        // Indications
+                        Container(
+                          color: color,
+                          padding: EdgeInsets.all(10),
+                          alignment: Alignment.center,
+                          child: text != null ? Text(text) : null,
                         ),
-                      ),
-                    ],
-                  );
+
+                        // Card Picker
+                        Expanded(
+                          child: CardPicker(
+                            cards: room.phase.number == 3
+                              ? room.phase.playedCards.values.toList(growable: false)
+                              : player.cards,
+                            excludedCard: room.phase.number == 3 ? room.phase.playedCards[player.name] : null,
+                            mustSelectSentence: mustSelectSentence,
+                            onSelected: onSelectCallback,
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+
+                  // Results
+                  return Text('r');
                 }
               ),
             ),
@@ -318,11 +326,11 @@ class GamePageBloc with Disposable {
 
     // If everyone has chosen a card, go to phase 3
     if (isMainPlayer && room.phase.number == 2 && room.phase.playedCards.length == room.players.length)
-      _toPhase(room, 3);
+      _toPhase3(room);
 
     // If everyone has voted a card, go to phase 4
     if (isMainPlayer && room.phase.number == 3 && room.phase.votes.values.fold(0, (sum, players) => sum + players.length) == room.players.length)
-      _toPhase(room, 4);
+      _toPhase4(room);
   }
 
   final _random = Random();
@@ -374,6 +382,14 @@ class GamePageBloc with Disposable {
     await DatabaseService.savePlayer(room.name, player);
   }
 
+  Future<void> _toPhase3(Room room) async {
+    // Apply new phase data
+    room.phase.number = 3;
+
+    // Update DB
+    await DatabaseService.savePhaseNumber(room.name, room.phase.number);
+  }
+
   Future<void> voteCard(Room room, String card) async {
     // Apply new phase data
     room.phase.votes[card] = [mainBloc.playerName];   //Don't need to merge with other vote as the database update already merge
@@ -382,12 +398,49 @@ class GamePageBloc with Disposable {
     await DatabaseService.savePhase(room.name, room.phase);
   }
 
-  Future<void> _toPhase(Room room, int phaseNumber) async {
-    // Apply new phase data
-    room.phase.number = phaseNumber;
+  Future<void> _toPhase4(Room room, int phaseNumber) async {
+    // ---- Count score ----
+    var mainPlayerName = room.phase.mainPlayerName;
+    var votes = room.phase.votes;
 
-    // Update DB
-    await DatabaseService.savePhaseNumber(room.name, room.phase.number);
+    // If none or all player(s) voted for the main player's card, give 2 points for each players except main player
+    var mainPlayerCardVotes = votes[mainPlayerName]?.length ?? 0;
+    if (mainPlayerCardVotes == 0 || mainPlayerCardVotes == room.players.length - 1) {
+      for (var player in room.players.values) {
+        if (player.name != mainPlayerName)
+          player.score += 2;
+      }
+    }
+
+    // If not
+    else {
+      // For each card vote
+      for (var voteEntry in votes.entries) {
+        var cardOwner = room.players[room.phase.playedCards.entries.firstWhere((entry) => entry.value == voteEntry.key).key];
+
+        // If it's the main player's card
+        if (cardOwner.name == mainPlayerName) {
+          // Give 3 points for each player who has voted for the main player's card
+          voteEntry.value.forEach((playerName) => room.players[playerName].score += 3);
+
+          // Give 3 point for the main player
+          cardOwner.score += 3;
+        }
+
+        // If not
+        else {
+          // Give 1 points per voter to the owner
+          voteEntry.value.forEach((playerName) => cardOwner.score += 1);
+        }
+
+      }
+    }
+
+    // ---- Apply new phase data -----
+    room.phase.number = 4;
+
+    // ---- Update DB -----
+    await DatabaseService.saveRoom(room);
   }
 
   @override

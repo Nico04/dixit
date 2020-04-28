@@ -16,6 +16,9 @@ Room _$RoomFromJson(Map<String, dynamic> json) {
     phase: json['phase'] == null
         ? null
         : Phase.fromJson(json['phase'] as Map<String, dynamic>),
+    previousPhase: json['previousPhase'] == null
+        ? null
+        : Phase.fromJson(json['previousPhase'] as Map<String, dynamic>),
     turn: json['turn'] as int,
   );
 }
@@ -33,6 +36,7 @@ Map<String, dynamic> _$RoomToJson(Room instance) {
   writeNotNull(
       'players', instance.players?.map((k, e) => MapEntry(k, e?.toJson())));
   writeNotNull('phase', instance.phase?.toJson());
+  writeNotNull('previousPhase', instance.previousPhase?.toJson());
   writeNotNull('turn', instance.turn);
   return val;
 }

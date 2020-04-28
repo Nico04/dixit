@@ -6,7 +6,7 @@ part 'player.g.dart';
 class Player {
   final String name;    //OPTI remove this from json, because it's on the key already
   List<String> cards;
-  final int score;
+  int score;
 
   Player(this.name, {this.cards, int score}) :
     this.score = score ?? 0;
