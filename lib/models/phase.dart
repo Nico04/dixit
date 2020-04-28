@@ -4,13 +4,13 @@ part 'phase.g.dart';
 
 @JsonSerializable()
 class Phase {
-  final String mainPlayerName;
+  final String storytellerName;   // Player name of the storyteller
   int number;
-  String sentence;
+  String sentence;                // Storyteller's sentence
   final Map<String, String> playedCards;  // <playerName, card>
   final Map<String, List<String>> votes;  // <card, List<playerName>>
 
-  Phase(this.mainPlayerName, {int number, this.sentence, Map<String, String> playedCards, Map<String, List<String>> votes}) :
+  Phase(this.storytellerName, {int number, this.sentence, Map<String, String> playedCards, Map<String, List<String>> votes}) :
     this.number = number ?? 1,
     this.playedCards = playedCards ?? Map<String, String>(),
     this.votes = votes ?? Map<String, List<String>>();

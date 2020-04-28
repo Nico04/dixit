@@ -53,7 +53,7 @@ class GamePage extends StatelessWidget {
                       onStartGame: () => bloc.startGame(room),
                     );
 
-                  var isMainPlayer = player.name == room.phase.mainPlayerName;
+                  var isStoryteller = player.name == room.phase.storytellerName;
                   var phaseNumber = room.phase.number;
 
                   // Card Picker
@@ -65,16 +65,16 @@ class GamePage extends StatelessWidget {
                     CardPickerSelectCallback onSelectCallback;
 
                     if (phaseNumber == 1) {
-                      color = isMainPlayer ? Colors.greenAccent : Colors.grey;
-                      text = isMainPlayer ? 'Choisir une carte, puis une phrase' : 'Attendre';
-                      mustSelectSentence = isMainPlayer;
-                      if (isMainPlayer)
+                      color = isStoryteller ? Colors.greenAccent : Colors.grey;
+                      text = isStoryteller ? 'Choisir une carte, puis une phrase' : 'Attendre';
+                      mustSelectSentence = isStoryteller;
+                      if (isStoryteller)
                         onSelectCallback = (card, sentence) => bloc.setSentence(room, card, sentence);
                     }
 
                     else if (phaseNumber == 2) {
                       var playerHasSelected = room.phase.playedCards.keys.contains(player.name);
-                      var hasActionToDo = !isMainPlayer && !playerHasSelected;
+                      var hasActionToDo = !isStoryteller && !playerHasSelected;
                       color = hasActionToDo ? Colors.greenAccent : Colors.grey;
                       text = hasActionToDo ? 'Choisir une carte :\n${room.phase.sentence}' : 'Attendre';
                       if (hasActionToDo)
@@ -322,14 +322,14 @@ class GamePageBloc with Disposable {
   }
 
   void onRoomUpdate(Room room) {
-    var isMainPlayer = mainBloc.playerName == room.phase?.mainPlayerName;
+    var isStoryteller = mainBloc.playerName == room.phase?.storytellerName;
 
     // If everyone has chosen a card, go to phase 3
-    if (isMainPlayer && room.phase.number == 2 && room.phase.playedCards.length == room.players.length)
+    if (isStoryteller && room.phase.number == 2 && room.phase.playedCards.length == room.players.length)
       _toPhase3(room);
 
     // If everyone has voted a card, go to phase 4
-    if (isMainPlayer && room.phase.number == 3 && room.phase.votes.values.fold(0, (sum, players) => sum + players.length) == room.players.length)
+    if (isStoryteller && room.phase.number == 3 && room.phase.votes.values.fold(0, (sum, players) => sum + players.length) == room.players.length)
       _toPhase4(room);
   }
 
@@ -357,7 +357,7 @@ class GamePageBloc with Disposable {
     // Apply new phase data
     room.phase
       ..sentence = sentence
-      ..playedCards[room.phase.mainPlayerName] = card
+      ..playedCards[room.phase.storytellerName] = card
       ..number = 2;
 
     // Remove played card and update DB
@@ -398,16 +398,16 @@ class GamePageBloc with Disposable {
     await DatabaseService.savePhase(room.name, room.phase);
   }
 
-  Future<void> _toPhase4(Room room, int phaseNumber) async {
+  Future<void> _toPhase4(Room room) async {
     // ---- Count score ----
-    var mainPlayerName = room.phase.mainPlayerName;
+    var storytellerName = room.phase.storytellerName;
     var votes = room.phase.votes;
 
-    // If none or all player(s) voted for the main player's card, give 2 points for each players except main player
-    var mainPlayerCardVotes = votes[mainPlayerName]?.length ?? 0;
-    if (mainPlayerCardVotes == 0 || mainPlayerCardVotes == room.players.length - 1) {
+    // If none or all player(s) voted for the storyteller's card, give 2 points for each players except main player
+    var storytellerCardVotes = votes[storytellerName]?.length ?? 0;
+    if (storytellerCardVotes == 0 || storytellerCardVotes == room.players.length - 1) {
       for (var player in room.players.values) {
-        if (player.name != mainPlayerName)
+        if (player.name != storytellerName)
           player.score += 2;
       }
     }
@@ -418,12 +418,12 @@ class GamePageBloc with Disposable {
       for (var voteEntry in votes.entries) {
         var cardOwner = room.players[room.phase.playedCards.entries.firstWhere((entry) => entry.value == voteEntry.key).key];
 
-        // If it's the main player's card
-        if (cardOwner.name == mainPlayerName) {
-          // Give 3 points for each player who has voted for the main player's card
+        // If it's the storyteller's card
+        if (cardOwner.name == storytellerName) {
+          // Give 3 points for each player who has voted for the storyteller's card
           voteEntry.value.forEach((playerName) => room.players[playerName].score += 3);
 
-          // Give 3 point for the main player
+          // Give 3 point for the storyteller
           cardOwner.score += 3;
         }
 

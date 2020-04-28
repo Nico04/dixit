@@ -8,7 +8,7 @@ part of 'phase.dart';
 
 Phase _$PhaseFromJson(Map<String, dynamic> json) {
   return Phase(
-    json['mainPlayerName'] as String,
+    json['storytellerName'] as String,
     number: json['number'] as int,
     sentence: json['sentence'] as String,
     playedCards: (json['playedCards'] as Map<String, dynamic>)?.map(
@@ -29,7 +29,7 @@ Map<String, dynamic> _$PhaseToJson(Phase instance) {
     }
   }
 
-  writeNotNull('mainPlayerName', instance.mainPlayerName);
+  writeNotNull('storytellerName', instance.storytellerName);
   writeNotNull('number', instance.number);
   writeNotNull('sentence', instance.sentence);
   writeNotNull('playedCards', instance.playedCards);

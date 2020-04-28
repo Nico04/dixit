@@ -11,8 +11,6 @@ class Room {
   Phase previousPhase;  // Keep a ref to previous phase when starting a new turn
   int turn;
 
-  Player get mainPlayer => phase != null ? players[phase.mainPlayerName] : null;
-
   Room(this.name, {Map<String, Player> players, this.phase, this.previousPhase, int turn}) :
     this.players = players ?? Map<String, Player>(),
     this.turn = turn ?? 0;
