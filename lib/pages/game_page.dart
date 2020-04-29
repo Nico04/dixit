@@ -117,7 +117,7 @@ class GamePage extends StatelessWidget {
 
                   // Game board
                   return GameBoard(
-                    playerCards: bloc.getCardDataFromIds(player.cards),
+                    playerCards: bloc.getCardDataFromIDs(player.cards),
                     boardCards: () {
                       Iterable<int> boardCardToDisplay;
                       if (phaseNumber == Phase.Phase1_storytellerSentence)
@@ -126,9 +126,9 @@ class GamePage extends StatelessWidget {
                       if (phaseNumber >= Phase.Phase3_vote)
                         boardCardToDisplay = room.phase.playedCards.values;
 
-                      return bloc.getCardDataFromIds(boardCardToDisplay);
+                      return bloc.getCardDataFromIDs(boardCardToDisplay);
                     } (),
-                    playedCardId: room.phase.playedCards[player.name],
+                    playedCardID: room.phase.playedCards[player.name],
                     onHandCardSelected: onHandCardSelectedCallback,
                     onBoardCardSelected: onBoardCardSelectedCallback,
                     mustChooseSentence: mustChooseSentence,
@@ -295,10 +295,10 @@ class GameBoard extends StatefulWidget {
   final CardPickerSelectCallback onHandCardSelected;
   final CardPickerSelectCallback onBoardCardSelected;
   final bool mustChooseSentence;
-  final int playedCardId;
+  final int playedCardID;
   final Map<String, int> scores;    // <playerName, score>
 
-  const GameBoard({Key key, this.playerCards, this.boardCards, this.onHandCardSelected, this.onBoardCardSelected, this.mustChooseSentence, this.playedCardId, this.scores}) : super(key: key);
+  const GameBoard({Key key, this.playerCards, this.boardCards, this.onHandCardSelected, this.onBoardCardSelected, this.mustChooseSentence, this.playedCardID, this.scores}) : super(key: key);
 
   @override
   _GameBoardState createState() => _GameBoardState();
@@ -325,7 +325,7 @@ class _GameBoardState extends State<GameBoard> {
               // Table
               CardPicker(
                 cards: widget.boardCards,
-                playerCardId: widget.playedCardId,
+                playerCardID: widget.playedCardID,
                 onSelected: widget.onBoardCardSelected,
               ),
 
@@ -369,11 +369,11 @@ typedef CardPickerSelectCallback = void Function(int card, String sentence);
 
 class CardPicker extends StatefulWidget {
   final List<CardData> cards;
-  final int playerCardId;
+  final int playerCardID;
   final bool mustSelectSentence;
   final CardPickerSelectCallback onSelected;
 
-  const CardPicker({Key key, this.cards, this.onSelected, this.mustSelectSentence, this.playerCardId}) : super(key: key);
+  const CardPicker({Key key, this.cards, this.onSelected, this.mustSelectSentence, this.playerCardID}) : super(key: key);
 
   @override
   _CardPickerState createState() => _CardPickerState();
@@ -481,7 +481,7 @@ class _CardPickerState extends State<CardPicker> {
                           AppResources.SpacerSmall,
                           RaisedButton(
                             child: Text('Valider'),
-                            onPressed: widget.cards[_currentCardIndex].id != widget.playerCardId
+                            onPressed: widget.cards[_currentCardIndex].id != widget.playerCardID
                               ? () => validate(context)
                               : null,
                           ),
@@ -571,7 +571,7 @@ class GamePageBloc with Disposable {
       _toScoresPhase(room);
   }
 
-  List<CardData> getCardDataFromIds(Iterable<int> cardsIds) => cardsIds?.map((id) => cards[id])?.toList(growable: false);
+  List<CardData> getCardDataFromIDs(Iterable<int> cardsIDs) => cardsIDs?.map((id) => cards[id])?.toList(growable: false);
 
   final _random = Random();
   int _drawCard(Room room) => room.cardDeck.removeAt(_random.nextInt(room.cardDeck.length));    //TODO save modif to DB

@@ -6,8 +6,9 @@ import 'package:dixit/services/database_service.dart';
 import 'package:dixit/services/storage_service.dart';
 import 'package:dixit/services/web_services.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:rxdart/rxdart.dart';
+
+import '../main.dart';
 
 class MainPage extends StatefulWidget {
   @override
@@ -152,16 +153,22 @@ class MainPageBloc with Disposable {
     // Get player
     var player = room.players.values.firstWhere((p) => p.name.normalized == playerName.normalized, orElse: () => null);
     if (player == null) {
-      //TODO handle if same playerName is submitted on 2 different devices
       if (room.isGameStarted) {
         showMessage(context, "Impossible d'ajouter un nouveau joueur sur une partie en cours", isError: true);
         return;
       }
 
-      player = Player(playerName);
+      player = Player(App.deviceID, playerName);
       room.players[player.name] = player;
       await DatabaseService.saveRoom(room);
-    } else {
+    }
+    else {
+      // Can't join game if user has changed device. This is to prevent connecting to multiple devices with the same playerName
+      if (player.deviceID != App.deviceID) {
+        showMessage(context, "Impossible de changer d'appareil lors d'une partie en cours", isError: true);
+        return;
+      }
+
       playerName = player.name;
     }
 

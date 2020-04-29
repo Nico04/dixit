@@ -12,8 +12,8 @@ class Phase {
   final String storytellerName;   // Player name of the storyteller
   int number;
   String sentence;                // Storyteller's sentence
-  final Map<String, int> playedCards;  // <playerName, cardId>
-  final Map<int, List<String>> votes;  // <cardId, List<playerName>>
+  final Map<String, int> playedCards;  // <playerName, cardID>
+  final Map<int, List<String>> votes;  // <cardID, List<playerName>>
 
   //TODO add Map<String, int> score; // <playerName, score>
 
