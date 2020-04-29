@@ -174,6 +174,7 @@ class MainPageBloc with Disposable {
     }
 
     // Go to room
+    // TODO if 2 devices with same values join at the same time, they both go the the waiting lobby with just one player. Just getRoom(fromServer: true) before navigation ?
     navigateTo(context, () => GamePage(
       playerName: playerName,
       roomName: roomName,

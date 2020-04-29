@@ -623,8 +623,14 @@ class GamePageBloc with Disposable {
   }
 
   Future<void> _toVotePhase(Room room) async {
+    // Shuffle played card
+    room.phase.playedCards = Map.fromEntries(room.phase.playedCards.entries.toList(growable: false)..shuffle());
+
+    // Update phase
+    room.phase.number = Phase.Phase3_vote;
+
     // Directly update DB
-    await DatabaseService.savePhaseNumber(room.name, Phase.Phase3_vote);
+    await DatabaseService.savePhase(room.name, room.phase);
   }
 
   Future<void> voteCard(Room room, int card) async {

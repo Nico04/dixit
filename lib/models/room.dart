@@ -8,7 +8,7 @@ part 'room.g.dart';
 class Room {
   final String name;    // Room name, may differ from the database key which is normalized
   final List<int> cardDeck;   // Cards left in the pile/deck
-  final Map<String, Player> players;    // <playerName, player>
+  final Map<String, Player> players;    // <playerName, player> - Order in NOT guaranteed (because of Firestore)
   Phase phase;
   Phase previousPhase;  // Keep a ref to previous phase when starting a new turn
   int turn;
