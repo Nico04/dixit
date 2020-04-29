@@ -121,7 +121,7 @@ class GamePage extends StatelessWidget {
                     boardCards: () {
                       Iterable<int> boardCardToDisplay;
                       if (phaseNumber == Phase.Phase1_storytellerSentence)
-                        boardCardToDisplay = room.previousPhase.playedCards.values;
+                        boardCardToDisplay = room.previousPhase?.playedCards?.values;
 
                       if (phaseNumber >= Phase.Phase3_vote)
                         boardCardToDisplay = room.phase.playedCards.values;

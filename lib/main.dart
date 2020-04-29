@@ -1,5 +1,6 @@
 import 'package:device_id/device_id.dart';
 import 'package:flutter/material.dart';
+import 'package:screen/screen.dart';
 
 import 'pages/_pages.dart';
 import 'services/storage_service.dart';
@@ -9,6 +10,9 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await StorageService.init();
   App.deviceID = await DeviceId.getID;
+
+  //Keep screen awake
+  Screen.keepOn(true);
 
   // Start app
   runApp(App());

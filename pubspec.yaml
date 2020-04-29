@@ -11,7 +11,7 @@ description: Flutter version of Dixit Boardgame
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 0.0.1+1
+version: 0.0.2+2
 
 environment:
   sdk: ">=2.7.0 <3.0.0"
@@ -41,6 +41,7 @@ dependencies:
 
   # Platform info
   device_id: ^0.2.0
+  screen: ^0.0.5
 
 dev_dependencies:
   build_runner: ^1.9.0

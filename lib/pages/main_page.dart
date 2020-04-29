@@ -5,6 +5,7 @@ import 'package:dixit/resources/resources.dart';
 import 'package:dixit/services/database_service.dart';
 import 'package:dixit/services/storage_service.dart';
 import 'package:dixit/services/web_services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -164,7 +165,7 @@ class MainPageBloc with Disposable {
     }
     else {
       // Can't join game if user has changed device. This is to prevent connecting to multiple devices with the same playerName
-      if (player.deviceID != App.deviceID) {
+      if (kReleaseMode && player.deviceID != App.deviceID) {
         showMessage(context, "Impossible de changer d'appareil lors d'une partie en cours", isError: true);
         return;
       }
