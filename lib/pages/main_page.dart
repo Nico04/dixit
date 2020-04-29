@@ -154,7 +154,7 @@ class MainPageBloc with Disposable {
     if (player == null) {
       //TODO handle if same playerName is submitted on 2 different devices
       if (room.isGameStarted) {
-        showMessage(context, 'Impossible de rejoindre une partie en cours', isError: true);
+        showMessage(context, "Impossible d'ajouter un nouveau joueur sur une partie en cours", isError: true);
         return;
       }
 

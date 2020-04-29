@@ -118,7 +118,16 @@ class GamePage extends StatelessWidget {
                   // Game board
                   return GameBoard(
                     playerCards: bloc.getCardDataFromIds(player.cards),
-                    boardCards: bloc.getCardDataFromIds(room.phase.playedCards.values),
+                    boardCards: () {
+                      Iterable<int> boardCardToDisplay;
+                      if (phaseNumber == Phase.Phase1_storytellerSentence)
+                        boardCardToDisplay = room.previousPhase.playedCards.values;
+
+                      if (phaseNumber >= Phase.Phase3_vote)
+                        boardCardToDisplay = room.phase.playedCards.values;
+
+                      return bloc.getCardDataFromIds(boardCardToDisplay);
+                    } (),
                     playedCardId: room.phase.playedCards[player.name],
                     onHandCardSelected: onHandCardSelectedCallback,
                     onBoardCardSelected: onBoardCardSelectedCallback,
@@ -126,18 +135,6 @@ class GamePage extends StatelessWidget {
                     scores: room.players.map((playerName, player) => MapEntry(playerName, player.score)),
                   );
 
-                  /**
-                  // Card Picker
-                  return CardPicker(
-                    cards: bloc.getCardDataFromIds(
-                      room.phase.number == Phase.Phase3_vote
-                        ? room.phase.playedCards.values.toList(growable: false)
-                        : player.cards
-                    ),
-                    excludedCardId: room.phase.number == Phase.Phase3_vote ? room.phase.playedCards[player.name] : null,
-                    mustSelectSentence: mustSelectSentence,
-                    onSelected: onSelectCallback,
-                  );*/
                 } ();
 
                 // Build page
@@ -574,7 +571,7 @@ class GamePageBloc with Disposable {
       _toScoresPhase(room);
   }
 
-  List<CardData> getCardDataFromIds(Iterable<int> cardsIds) => cardsIds.map((id) => cards[id]).toList(growable: false);
+  List<CardData> getCardDataFromIds(Iterable<int> cardsIds) => cardsIds?.map((id) => cards[id])?.toList(growable: false);
 
   final _random = Random();
   int _drawCard(Room room) => room.cardDeck.removeAt(_random.nextInt(room.cardDeck.length));    //TODO save modif to DB
