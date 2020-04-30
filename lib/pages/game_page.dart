@@ -48,13 +48,12 @@ class GamePage extends StatelessWidget {
                 // Prepare
                 Color instructionsColor;
                 String instructionsText;
-                var getInstructionsColor = (bool todo) => todo == true ? Colors.greenAccent : Colors.grey;
 
                 // Build content
                 Widget child = () {
                   // If data is not available
                   if (room == null) {
-                    instructionsColor = getInstructionsColor(false);
+                    instructionsColor = _buildInstructionsColor(false);
                     instructionsText = 'Synchronisation en cours';
 
                     return Center(
@@ -67,7 +66,7 @@ class GamePage extends StatelessWidget {
 
                   // WaitingLobby
                   if (room.turn == 0) {
-                    instructionsColor = getInstructionsColor(isHost);
+                    instructionsColor = _buildInstructionsColor(isHost);
                     instructionsText = 'En attente des joueurs';
 
                     return WaitingLobby(
@@ -85,27 +84,35 @@ class GamePage extends StatelessWidget {
                   CardPickerSelectCallback onBoardCardSelectedCallback;
 
                   if (phaseNumber == Phase.Phase1_storytellerSentence) {
-                    instructionsColor = getInstructionsColor(isStoryteller);
-                    instructionsText = isStoryteller ? 'Choisir une carte et une phrase' : 'Attendre';
+                    instructionsColor = _buildInstructionsColor(isStoryteller);
+                    instructionsText = isStoryteller
+                      ? 'Choisir une carte et une phrase'
+                      : _buildWaitText([room.phase.storytellerName]);
                     mustChooseSentence = isStoryteller;
                     if (isStoryteller)
                       onHandCardSelectedCallback = (card, sentence) => bloc.setSentence(room, card, sentence);
                   }
 
                   else if (phaseNumber == Phase.Phase2_cardSelect) {
-                    var playerHasSelected = room.phase.playedCards.keys.contains(player.name);
-                    var hasActionToDo = !isStoryteller && !playerHasSelected;
-                    instructionsColor = getInstructionsColor(hasActionToDo);
-                    instructionsText = hasActionToDo ? 'Choisir une carte :\n${room.phase.sentence}' : 'Attendre';
+                    var waitedPlayersNames = room.players.keys.where((playerName) => !room.phase.playedCards.keys.contains(playerName));
+                    var hasPlayerSelected = !waitedPlayersNames.contains(player.name);
+                    var hasActionToDo = !isStoryteller && !hasPlayerSelected;
+                    instructionsColor = _buildInstructionsColor(hasActionToDo);
+                    instructionsText = hasActionToDo
+                      ? 'Choisir une carte :\n${room.phase.sentence}'
+                      : _buildWaitText(waitedPlayersNames);
                     if (hasActionToDo)
                       onHandCardSelectedCallback = (card, _) => bloc.selectCard(room, card);
                   }
 
                   else if (phaseNumber == Phase.Phase3_vote) {
-                    var playerHasVoted = room.phase.votes.values.any((players) => players.contains(player.name));
-                    instructionsColor = !playerHasVoted ? Colors.greenAccent : Colors.grey;
-                    instructionsText = !playerHasVoted ? 'Voter pour une carte :\n${room.phase.sentence}' : 'Attendre';
-                    if (!playerHasVoted)
+                    var waitedPlayersNames = room.players.keys.where((playerName) => !room.phase.votes.values.any((players) => players.contains(playerName)));
+                    var hasPlayerVoted = !waitedPlayersNames.contains(player.name);
+                    instructionsColor = _buildInstructionsColor(!hasPlayerVoted);
+                    instructionsText = !hasPlayerVoted
+                      ? 'Voter pour une carte :\n${room.phase.sentence}'
+                      : _buildWaitText(waitedPlayersNames);
+                    if (!hasPlayerVoted)
                       onBoardCardSelectedCallback = (card, _) => bloc.voteCard(room, card);
                   }
 
@@ -147,6 +154,7 @@ class GamePage extends StatelessWidget {
                       InstructionsHeader(
                         roomName: roomName,
                         playerName: playerName,
+                        storytellerName: room?.phase?.storytellerName,
                         color: instructionsColor,
                         instructions: instructionsText,
                         turn: room?.turn,
@@ -166,17 +174,34 @@ class GamePage extends StatelessWidget {
       ),
     );
   }
+
+  Color _buildInstructionsColor(bool hasTodo) => hasTodo == true ? Colors.greenAccent : Colors.grey;
+
+  String _buildWaitText(Iterable<String> waitedPlayersNames) {
+    String text;
+
+    if (waitedPlayersNames.length > 1) {
+      const separator = ', ';
+      text = waitedPlayersNames.join(separator);
+      text.replaceLast(separator, ' et ');
+    } else if (waitedPlayersNames.length == 1) {
+      text = waitedPlayersNames.first;
+    }
+
+    return text != null ? "En attente de : $text" : "Attendre";
+  }
 }
 
 class InstructionsHeader extends StatelessWidget {
   final Color color;
   final String roomName;
   final String playerName;
+  final String storytellerName;
   final String instructions;
   final int turn;
   final int phaseNumber;
 
-  const InstructionsHeader({Key key, this.color, this.roomName, this.playerName, this.instructions, this.turn, this.phaseNumber}) : super(key: key);
+  const InstructionsHeader({Key key, this.color, this.roomName, this.playerName, this.storytellerName, this.instructions, this.turn, this.phaseNumber}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -207,6 +232,15 @@ class InstructionsHeader extends StatelessWidget {
 
                       ],
                     ),
+
+                    // Storyteller name
+                    if (storytellerName?.isNotEmpty == true)
+                      ...[
+                        AppResources.SpacerTiny,
+                        Text(storytellerName == playerName
+                          ? "Vous êtes le conteur"
+                          : "Le compteur est $storytellerName"),
+                      ],
 
                     // Instructions
                     AppResources.SpacerTiny,

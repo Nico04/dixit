@@ -128,6 +128,11 @@ String dateToString(DateTime date) => date?.toUtc()?.toIso8601String();
 extension ExtendedString on String {
   /// Normalize a string by removing diacritics and transform to lower case
   String get normalized => removeDiacritics(this.toLowerCase());
+
+  /// Returns a new string in which the last occurrence of [from] in this string is replaced with [to]
+  String replaceLast(String from, String to) {
+    return this.replaceFirst(from, to, this.lastIndexOf(from));
+  }
 }
 
 extension ExtendedRandom on Random {
@@ -145,6 +150,7 @@ extension ExtendedRandom on Random {
 extension ExtendedMap<K, V> on Map<K, V> {
   /// Return a LinkedHashMap sorted using [compare] function
   LinkedHashMap<K, V> sorted([int compare(MapEntry<K, V> a, MapEntry<K, V> b)]) {
+    if (this.length <= 1) return this;
     var sortedEntries = this.entries.toList(growable: false)..sort(compare);
     return LinkedHashMap.fromEntries(sortedEntries);
   }
