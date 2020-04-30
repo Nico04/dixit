@@ -63,7 +63,7 @@ class GamePage extends StatelessWidget {
                   }
 
                   var player = room.players[bloc.playerName];
-                  var isHost = player.name == room.players.keys.first;
+                  var isHost = player.position == 1;
 
                   // WaitingLobby
                   if (room.turn == 0) {
@@ -697,9 +697,9 @@ class GamePageBloc with Disposable {
     // Start new turn
     else {
       // New phase
-      var playersNames = room.players.keys.toList(growable: false);
-      var storytellerIndex = playersNames.indexOf(room.previousPhase.storytellerName);
-      var nextStoryteller = playersNames[(storytellerIndex + 1) % playersNames.length];
+      var previousStorytellerPosition = room.players[room.previousPhase.storytellerName].position;
+      var nextStorytellerPosition = (previousStorytellerPosition % room.players.length) + 1;
+      var nextStoryteller = room.players.values.firstWhere((player) => player.position == nextStorytellerPosition).name;
       room.phase = Phase(nextStoryteller);
 
       // Draw cards

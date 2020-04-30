@@ -12,8 +12,8 @@ class Phase {
   final String storytellerName;   // Player name of the storyteller
   int number;
   String sentence;                // Storyteller's sentence
-  Map<String, int> playedCards;         // <playerName, cardID> - Order in NOT guaranteed (because of Firestore)
-  final Map<int, List<String>> votes;   // <cardID, List<playerName>> - Order in NOT guaranteed (because of Firestore)
+  Map<String, int> playedCards;         // <playerName, cardID> - Order is NOT guaranteed (because of Firestore)
+  final Map<int, List<String>> votes;   // <cardID, List<playerName>> - Order is NOT guaranteed (because of Firestore)
 
   //TODO add Map<String, int> score; // <playerName, score> : Score for this phase only
 

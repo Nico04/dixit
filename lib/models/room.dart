@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:dixit/helpers/tools.dart';
 import 'package:json_annotation/json_annotation.dart';
 import '_models.dart';
@@ -8,7 +10,7 @@ part 'room.g.dart';
 class Room {
   final String name;    // Room name, may differ from the database key which is normalized
   final List<int> cardDeck;   // Cards left in the pile/deck    // TODO change to drawnCards : the max used cards in a game is around 100, so it's more efficient to store drawnCards instead of left cards
-  final Map<String, Player> players;    // <playerName, player> - Order in NOT guaranteed (because of Firestore)
+  final LinkedHashMap<String, Player> players;    // <playerName, player> - Ordered by player.position
   Phase phase;
   Phase previousPhase;  // Keep a ref to previous phase when starting a new turn
   int turn;
@@ -23,7 +25,7 @@ class Room {
   DateTime endDate;
 
   Room(this.name, this.cardDeck, {Map<String, Player> players, this.phase, this.previousPhase, int turn, DateTime startDate}) :
-    this.players = players ?? Map<String, Player>(),
+    this.players = (players ?? LinkedHashMap<String, Player>()).sorted((e1, e2) => e1.value.position.compareTo(e2.value.position)),    // Force sort by position, as order in NOT guaranteed by Firestore
     this.turn = turn ?? 0,
     this.startDate = startDate ?? DateTime.now();
 

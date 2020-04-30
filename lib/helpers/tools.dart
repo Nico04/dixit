@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:math';
 
 import 'package:diacritic/diacritic.dart';
@@ -138,5 +139,13 @@ extension ExtendedRandom on Random {
   int nextIntExtended(int max) {
     //if ()
     return (this.nextDouble() * max).toInt();
+  }
+}
+
+extension ExtendedMap<K, V> on Map<K, V> {
+  /// Return a LinkedHashMap sorted using [compare] function
+  LinkedHashMap<K, V> sorted([int compare(MapEntry<K, V> a, MapEntry<K, V> b)]) {
+    var sortedEntries = this.entries.toList(growable: false)..sort(compare);
+    return LinkedHashMap.fromEntries(sortedEntries);
   }
 }
