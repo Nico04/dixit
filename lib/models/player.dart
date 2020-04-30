@@ -6,11 +6,11 @@ part 'player.g.dart';
 class Player {
   final String deviceID;
   final String name;    // OPTI remove this from json, because it's on the key already
-  //TODO final int position;   // Like a seat position around a table
+  final int position;   // Like a seat position around a table
   List<int> cards;      // List of cards ids player has in his hand
   int score;
 
-  Player(this.deviceID, this.name, {this.cards, int score}) :
+  Player(this.deviceID, this.name, this.position, {this.cards, int score}) :
     this.score = score ?? 0;
 
   factory Player.fromJson(Map<String, dynamic> json) => json == null ? null : _$PlayerFromJson(json);

@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:provider/provider.dart';
+import 'package:screen/screen.dart';
 
 const _pageContentPadding = EdgeInsets.all(15);
 
@@ -554,7 +555,11 @@ class GamePageBloc with Disposable {
 
   GamePageBloc({this.playerName, this.roomName, this.cards}) :
     roomStream = DatabaseService.getRoomStream(roomName) {
+    //Subscribe to room modifications
     _roomStreamSubscription = roomStream.listen(onRoomUpdate);
+
+    //Keep screen awake
+    Screen.keepOn(true);
   }
 
   void onRoomUpdate(Room room) {
@@ -710,6 +715,9 @@ class GamePageBloc with Disposable {
 
   @override
   void dispose() {
+    //Keep screen awake
+    Screen.keepOn(false);
+
     _roomStreamSubscription.cancel();
     super.dispose();
   }

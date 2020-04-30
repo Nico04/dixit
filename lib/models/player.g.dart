@@ -10,6 +10,7 @@ Player _$PlayerFromJson(Map<String, dynamic> json) {
   return Player(
     json['deviceID'] as String,
     json['name'] as String,
+    json['position'] as int,
     cards: (json['cards'] as List)?.map((e) => e as int)?.toList(),
     score: json['score'] as int,
   );
@@ -26,6 +27,7 @@ Map<String, dynamic> _$PlayerToJson(Player instance) {
 
   writeNotNull('deviceID', instance.deviceID);
   writeNotNull('name', instance.name);
+  writeNotNull('position', instance.position);
   writeNotNull('cards', instance.cards);
   writeNotNull('score', instance.score);
   return val;
