@@ -1,4 +1,5 @@
 import 'package:device_id/device_id.dart';
+import 'package:dixit/resources/resources.dart';
 import 'package:flutter/material.dart';
 
 import 'pages/_pages.dart';
@@ -23,6 +24,12 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Dixit',
+      theme: ThemeData(
+        primaryColor: AppResources.ColorSand,
+        accentColor: AppResources.ColorRed,
+        backgroundColor: AppResources.ColorOrange,
+        scaffoldBackgroundColor: AppResources.ColorOrange,
+      ),
       home: MainPage(),
     );
   }

@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 
 class AppResources {
+  // Color
+  static const ColorOrange = Color(0xFFF58726);
+  static const ColorRed = Color(0xFF942B28);
+  static const ColorSand = Color(0xFFF0DCA1);
+
   // Spacer
   static const SpacerLarge = SizedBox(width: 20, height: 20);
   static const SpacerMedium = SizedBox(width: 15, height: 15);

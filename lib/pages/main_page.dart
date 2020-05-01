@@ -5,6 +5,7 @@ import 'package:dixit/resources/resources.dart';
 import 'package:dixit/services/database_service.dart';
 import 'package:dixit/services/storage_service.dart';
 import 'package:dixit/services/web_services.dart';
+import 'package:dixit/widgets/_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -33,74 +34,95 @@ class _MainPageState extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Accueil'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          child: Builder(
-            builder: (context) {
-              return Column(
-                children: <Widget>[
-                  TextFormField(
-                    controller: _playerNameController,
-                    decoration: InputDecoration(
-                      labelText: 'Pseudo'
-                    ),
-                    textInputAction: TextInputAction.next,
-                    validator: AppResources.validatorNotEmpty,
-                    onFieldSubmitted: (value) => FocusScope.of(context).requestFocus(_roomNameFocus),
-                    onSaved: (value) => _bloc.playerName = value,
-                  ),
-                  AppResources.SpacerSmall,
-                  TextFormField(
-                    decoration: InputDecoration(
-                      labelText: 'Nom de la partie'
-                    ),
-                    textInputAction: TextInputAction.done,
-                    focusNode: _roomNameFocus,
-                    validator: (value) => AppResources.validatorNotEmpty(value) ?? (value == 'length' ? 'Invalide' : null),
-                    onFieldSubmitted: (value) => _bloc.validate(context),
-                    onSaved: (value) => _bloc.roomName = value,
-                  ),
-                  AppResources.SpacerMedium,
-                  StreamBuilder<bool>(
-                    stream: _bloc.isReady,
-                    initialData: _bloc.isReady.value,
-                    builder: (context, snapshot) {
-                      if (snapshot.hasError)
-                        return Column(
-                          children: <Widget>[
-                            Tooltip(
-                              child: Text('Une erreur est survenue'),
-                              message: snapshot.error.toString(),
-                            ),
-                            RaisedButton(
-                              child: Text('Re-essayer'),
-                              onPressed: _bloc.init,
-                            )
-                          ],
-                        );
+      body: ClearFocusBackground(
+        child: Column(
+          children: <Widget>[
 
-                      if (snapshot.data != true)
-                        return Column(
-                          children: <Widget>[
-                            Text('Le jeu est en cours de préparation'),
-                            CircularProgressIndicator(),
-                          ],
-                        );
+            // Header
+            Material(
+              elevation: 6,
+              child: Image.asset('assets/logo.png'),
+            ),
 
-                      return RaisedButton(
-                        child: Text('Rejoindre partie'),
-                        onPressed: () => _bloc.validate(context),
-                      );
-                    }
-                  )
-                ],
-              );
-            }
-          ),
+            // Content
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Form(
+                child: Builder(
+                  builder: (context) {
+                    return Column(
+                      children: <Widget>[
+
+                        // Instructions
+                        Text('Pour rejoindre une partie, entrez votre pseudo et le nom de la partie'),
+
+                        // Pseudo
+                        AppResources.SpacerLarge,
+                        TextFormField(
+                          controller: _playerNameController,
+                          decoration: InputDecoration(
+                            labelText: 'Pseudo'
+                          ),
+                          textInputAction: TextInputAction.next,
+                          validator: AppResources.validatorNotEmpty,
+                          onFieldSubmitted: (value) => FocusScope.of(context).requestFocus(_roomNameFocus),
+                          onSaved: (value) => _bloc.playerName = value,
+                        ),
+
+                        // Room
+                        AppResources.SpacerSmall,
+                        TextFormField(
+                          decoration: InputDecoration(
+                            labelText: 'Nom de la partie',
+                          ),
+                          textInputAction: TextInputAction.done,
+                          focusNode: _roomNameFocus,
+                          validator: (value) => AppResources.validatorNotEmpty(value) ?? (value == 'length' ? 'Invalide' : null),
+                          onFieldSubmitted: (value) => _bloc.validate(context),
+                          onSaved: (value) => _bloc.roomName = value,
+                        ),
+
+                        // Button or status
+                        AppResources.SpacerLarge,
+                        StreamBuilder<bool>(
+                          stream: _bloc.isReady,
+                          initialData: _bloc.isReady.value,
+                          builder: (context, snapshot) {
+                            if (snapshot.hasError)
+                              return Column(
+                                children: <Widget>[
+                                  Tooltip(
+                                    child: Text('Une erreur est survenue'),
+                                    message: snapshot.error.toString(),
+                                  ),
+                                  RaisedButton(
+                                    child: Text('Re-essayer'),
+                                    onPressed: _bloc.init,
+                                  )
+                                ],
+                              );
+
+                            if (snapshot.data != true)
+                              return Column(
+                                children: <Widget>[
+                                  Text('Le jeu est en cours de préparation'),
+                                  CircularProgressIndicator(),
+                                ],
+                              );
+
+                            return AsyncButton(
+                              text: 'Rejoindre partie',
+                              onPressed: () => _bloc.validate(context),
+                            );
+                          }
+                        )
+                      ],
+                    );
+                  }
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -129,7 +151,10 @@ class MainPageBloc with Disposable {
     }
   }
 
-  void validate(BuildContext context) async {
+  Future<void> validate(BuildContext context) async {
+    await Future.delayed(Duration(seconds: 4));
+    return;
+
     // Clear focus
     clearFocus(context);   // Keyboard is closed automatically when called from "done" keyboard key, but not in other cases.
 
