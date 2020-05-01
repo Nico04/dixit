@@ -182,7 +182,7 @@ class MainPageBloc with Disposable {
 
         // If room is new, create it
         if (room == null) {
-          room = Room(roomName, cards.keys.toList());     // TODO save card only at turn 1, not now ?
+          room = Room(roomName);
           hasBeenModified = true;
         }
 

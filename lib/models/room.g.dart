@@ -9,11 +9,11 @@ part of 'room.dart';
 Room _$RoomFromJson(Map<String, dynamic> json) {
   return Room(
     json['name'] as String,
-    (json['cardDeck'] as List)?.map((e) => e as int)?.toList(),
     players: (json['players'] as Map<String, dynamic>)?.map(
       (k, e) => MapEntry(
           k, e == null ? null : Player.fromJson(e as Map<String, dynamic>)),
     ),
+    drawnCards: (json['drawnCards'] as List)?.map((e) => e as int)?.toList(),
     phase: json['phase'] == null
         ? null
         : Phase.fromJson(json['phase'] as Map<String, dynamic>),
@@ -22,7 +22,8 @@ Room _$RoomFromJson(Map<String, dynamic> json) {
         : Phase.fromJson(json['previousPhase'] as Map<String, dynamic>),
     turn: json['turn'] as int,
     startDate: dateFromString(json['startDate'] as String),
-  )..endDate = dateFromString(json['endDate'] as String);
+    endDate: dateFromString(json['endDate'] as String),
+  );
 }
 
 Map<String, dynamic> _$RoomToJson(Room instance) {
@@ -35,7 +36,7 @@ Map<String, dynamic> _$RoomToJson(Room instance) {
   }
 
   writeNotNull('name', instance.name);
-  writeNotNull('cardDeck', instance.cardDeck);
+  writeNotNull('drawnCards', instance.drawnCards);
   writeNotNull(
       'players', instance.players?.map((k, e) => MapEntry(k, e?.toJson())));
   writeNotNull('phase', instance.phase?.toJson());

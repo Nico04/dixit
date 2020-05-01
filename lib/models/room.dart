@@ -9,7 +9,7 @@ part 'room.g.dart';
 @JsonSerializable()
 class Room {
   final String name;    // Room name, may differ from the database key which is normalized
-  final List<int> cardDeck;   // Cards left in the pile/deck    // TODO change to drawnCards : the max used cards in a game is around 100, so it's more efficient to store drawnCards instead of left cards
+  final List<int> drawnCards;   // List of drawn cards IDs. Used to avoid drawing same card more than once. The max used cards in a game is around 100, so it's more efficient to store drawnCards instead of left cards.
   final LinkedHashMap<String, Player> players;    // <playerName, player> - Ordered by player.position
   Phase phase;
   Phase previousPhase;  // Keep a ref to previous phase when starting a new turn
@@ -24,8 +24,9 @@ class Room {
   @JsonKey(fromJson: dateFromString, toJson: dateToString)
   DateTime endDate;
 
-  Room(this.name, this.cardDeck, {Map<String, Player> players, this.phase, this.previousPhase, int turn, DateTime startDate}) :
+  Room(this.name, {Map<String, Player> players, List<int> drawnCards, this.phase, this.previousPhase, int turn, DateTime startDate, this.endDate}) :
     this.players = (players ?? LinkedHashMap<String, Player>()).sorted((e1, e2) => e1.value.position.compareTo(e2.value.position)),    // Force sort by position, as order in NOT guaranteed by Firestore
+    this.drawnCards = drawnCards ?? List<int>(),
     this.turn = turn ?? 0,
     this.startDate = startDate ?? DateTime.now();
 

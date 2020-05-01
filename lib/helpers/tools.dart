@@ -180,3 +180,10 @@ extension ExtendedMap<K, V> on Map<K, V> {
     return LinkedHashMap.fromEntries(sortedEntries);
   }
 }
+
+extension ExtendedList<T> on List<T> {
+  void removeAll(Iterable<T> values) {
+    for (var value in values)
+      this.remove(value);
+  }
+}

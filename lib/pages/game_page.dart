@@ -143,6 +143,7 @@ class GamePage extends StatelessWidget {
                     onBoardCardSelected: onBoardCardSelectedCallback,
                     mustChooseSentence: mustChooseSentence,
                     scores: room.players.map((playerName, player) => MapEntry(playerName, player.score)),
+                    boardCardsText: room.previousPhase?.votes?.map((cardID, players) => MapEntry(cardID, players.join('\n'))),
                   );
 
                 } ();
@@ -335,8 +336,9 @@ class GameBoard extends StatefulWidget {
   final bool mustChooseSentence;
   final int playedCardID;
   final Map<String, int> scores;    // <playerName, score>
+  final Map<int, String> boardCardsText;    // <cardID, text>
 
-  const GameBoard({Key key, this.playerCards, this.boardCards, this.onHandCardSelected, this.onBoardCardSelected, this.mustChooseSentence, this.playedCardID, this.scores}) : super(key: key);
+  const GameBoard({Key key, this.playerCards, this.boardCards, this.onHandCardSelected, this.onBoardCardSelected, this.mustChooseSentence, this.playedCardID, this.scores, this.boardCardsText}) : super(key: key);
 
   @override
   _GameBoardState createState() => _GameBoardState();
@@ -365,6 +367,7 @@ class _GameBoardState extends State<GameBoard> {
                 cards: widget.boardCards,
                 playerCardID: widget.playedCardID,
                 onSelected: widget.onBoardCardSelected,
+                cardsText: widget.boardCardsText,
               ),
 
               // Scores
@@ -410,8 +413,9 @@ class CardPicker extends StatefulWidget {
   final int playerCardID;
   final bool mustSelectSentence;
   final CardPickerSelectCallback onSelected;
+  final Map<int, String> cardsText;   // <cardIndex, text>
 
-  const CardPicker({Key key, this.cards, this.onSelected, this.mustSelectSentence, this.playerCardID}) : super(key: key);
+  const CardPicker({Key key, this.cards, this.onSelected, this.mustSelectSentence, this.playerCardID, this.cardsText}) : super(key: key);
 
   @override
   _CardPickerState createState() => _CardPickerState();
@@ -511,6 +515,13 @@ class _CardPickerState extends State<CardPicker> {
                 );
               }(),
             ),
+
+            // Card Text
+            if (widget.cardsText?.isNotEmpty == true)
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(widget.cardsText[widget.cards[_currentCardIndex].id]),
+              ),
 
             // Select Button
             if (widget.onSelected != null)
@@ -635,12 +646,25 @@ class GamePageBloc with Disposable {
   List<CardData> getCardDataFromIDs(Iterable<int> cardsIDs) => cardsIDs?.map((id) => cards[id])?.toList(growable: false);
 
   final _random = Random();
-  int _drawCard(Room room) => room.cardDeck.removeAt(_random.nextInt(room.cardDeck.length));    //TODO save modif to DB
+
+  /// Draw cards from deck
+  List<int> _drawCards(Room room, int quantity) {
+    // Build deck (card left to be drawn)
+    var deck = cards.keys.toList()..removeAll(room.drawnCards);    // Other way (more expensive ?) : cards.keys.toList()..removeWhere((cardID) => room.drawnCardsIds.contains(cardID));
+
+    // draw cards
+    var drawnCards = List.generate(quantity, (_) => deck.removeAt(_random.nextInt(deck.length)));
+
+    // Add to drawnCard list
+    room.drawnCards.addAll(drawnCards);
+
+    return drawnCards;
+  }
   
   Future<void> startGame(Room room) async {
     // Draw card for each player
     for (var player in room.players.values)
-      player.cards = List.generate(6, (_) => _drawCard(room));
+      player.cards = _drawCards(room, 6);
 
     // First turn
     room.turn = 1;
@@ -765,7 +789,8 @@ class GamePageBloc with Disposable {
       room.phase = Phase(nextStoryteller);
 
       // Draw cards
-      room.players.forEach((_, p) => p.cards.add(_drawCard(room)));
+      var drawnCards = _drawCards(room, room.players.length);   // Drawing multiple at once is less expansive.
+      room.players.forEach((_, p) => p.cards.add(drawnCards.removeAt(0)));
 
       // Next turn
       room.turn ++;
