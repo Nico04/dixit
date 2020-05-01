@@ -33,6 +33,7 @@ class GamePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Provider<GamePageBloc>(
       create: (context) => GamePageBloc(
+        context: context,
         playerName: playerName,
         roomName: roomName,
         cards: cards,
@@ -78,8 +79,8 @@ class GamePage extends StatelessWidget {
                     );
                   }
 
-                  var isStoryteller = player.name == room.phase.storytellerName;
-                  var phaseNumber = room.phase.number;
+                  var isStoryteller = player.name == room.phase?.storytellerName;
+                  var phaseNumber = room.phase?.number ?? -1;
 
                   bool mustChooseSentence = false;
                   CardPickerSelectCallback onHandCardSelectedCallback;
@@ -101,7 +102,7 @@ class GamePage extends StatelessWidget {
                     var hasActionToDo = !isStoryteller && !hasPlayerSelected;
                     instructionsColor = _buildInstructionsColor(hasActionToDo);
                     instructionsText = hasActionToDo
-                      ? 'Choisir une carte :\n${room.phase.sentence}'
+                      ? 'Choisir une carte'
                       : _buildWaitText(waitedPlayersNames);
                     if (hasActionToDo)
                       onHandCardSelectedCallback = (card, _) => bloc.selectCard(room, card);
@@ -112,25 +113,23 @@ class GamePage extends StatelessWidget {
                     var hasPlayerVoted = !waitedPlayersNames.contains(player.name);
                     instructionsColor = _buildInstructionsColor(!hasPlayerVoted);
                     instructionsText = !hasPlayerVoted
-                      ? 'Voter pour une carte :\n${room.phase.sentence}'
+                      ? 'Voter pour une carte'
                       : _buildWaitText(waitedPlayersNames);
                     if (!hasPlayerVoted)
                       onBoardCardSelectedCallback = (card, _) => bloc.voteCard(room, card);
                   }
 
-                  /*else if (phaseNumber == Phase.Phase4_scores) {
-                  color = !playerHasVoted ? Colors.greenAccent : Colors.grey;
-                  text = !playerHasVoted ? 'Voter pour une carte :\n${room.phase.sentence}' : 'Attendre';
-                  if (!playerHasVoted)
-                    onSelectCallback = (card, _) => bloc.voteCard(room, card);
-                  }*/
+                  else if (phaseNumber == -1) {
+                    instructionsColor = _buildInstructionsColor(false);
+                    instructionsText = "Partie terminée !";
+                  }
 
                   // Game board
                   return GameBoard(
                     playerCards: bloc.getCardDataFromIDs(player.cards),
                     boardCards: () {
                       Iterable<int> boardCardToDisplay;
-                      if (phaseNumber == Phase.Phase1_storytellerSentence)
+                      if (phaseNumber <= Phase.Phase1_storytellerSentence)
                         boardCardToDisplay = room.previousPhase?.playedCards?.values;
 
                       if (phaseNumber >= Phase.Phase3_vote)
@@ -138,37 +137,40 @@ class GamePage extends StatelessWidget {
 
                       return bloc.getCardDataFromIDs(boardCardToDisplay);
                     } (),
-                    playedCardID: room.phase.playedCards[player.name],
+                    playedCardID: room.phase?.playedCards?.getElement(player.name),
                     onHandCardSelected: onHandCardSelectedCallback,
                     onBoardCardSelected: onBoardCardSelectedCallback,
                     mustChooseSentence: mustChooseSentence,
                     scores: room.players.map((playerName, player) => MapEntry(playerName, player.score)),
-                    boardCardsText: room.previousPhase?.votes?.map((cardID, players) => MapEntry(cardID, players.join('\n'))),
+                    boardCardsText: phaseNumber == Phase.Phase1_storytellerSentence
+                      ? room.previousPhase?.votes?.map((cardID, players) => MapEntry(cardID, players.join('\n')))
+                      : null,
                   );
 
                 } ();
 
                 // Build page
-                return Material(
-                  child: Column(
-                    children: <Widget>[
+                return Column(
+                  children: <Widget>[
 
-                      // Indications header
-                      InstructionsHeader(
-                        roomName: roomName,
-                        playerName: playerName,
-                        storytellerName: room?.phase?.storytellerName,
-                        color: instructionsColor,
-                        instructions: instructionsText,
-                        turn: room?.turn,
-                        phaseNumber: room?.phase?.number,
-                      ),
+                    // Indications header
+                    GameHeader(
+                      roomName: roomName,
+                      playerName: playerName,
+                      storytellerName: room?.phase?.storytellerName,
+                      sentence: room?.phase?.sentence,
+                      instructionsColor: instructionsColor,
+                      instructions: instructionsText,
+                      turn: room?.turn,
+                      phaseNumber: room?.phase?.number,
+                    ),
 
-                      Expanded(
-                        child: child,
-                      )
-                    ],
-                  ),
+                    // Content
+                    Expanded(
+                      child: child,
+                    )
+
+                  ],
                 );
               }
             ),
@@ -195,86 +197,112 @@ class GamePage extends StatelessWidget {
   }
 }
 
-class InstructionsHeader extends StatelessWidget {
-  final Color color;
+class GameHeader extends StatelessWidget {
   final String roomName;
   final String playerName;
   final String storytellerName;
+  final String sentence;
   final String instructions;
+  final Color instructionsColor;
   final int turn;
   final int phaseNumber;
 
-  const InstructionsHeader({Key key, this.color, this.roomName, this.playerName, this.storytellerName, this.instructions, this.turn, this.phaseNumber}) : super(key: key);
+  const GameHeader({Key key, this.instructionsColor, this.roomName, this.playerName, this.storytellerName, this.instructions, this.turn, this.phaseNumber, this.sentence}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: color,
+      elevation: 5,     // TODO doesn't work
+      color: AppResources.ColorSand,
       child: SafeArea(
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
 
-            // Content
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  children: <Widget>[
+            // Top
+            Row(
+              children: <Widget>[
 
-                    // Informations
-                    Row(
+                // Content
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
                       children: <Widget>[
 
-                        // Player and room's names
-                        Text('$playerName @ $roomName'),
+                        // Information
+                        Row(
+                          children: <Widget>[
 
-                        // Game info
-                        Spacer(),
-                        if (turn != null && turn > 0)
-                          Text('Tour $turn, Phase $phaseNumber'),
+                            // Player and room's names
+                            Text('$playerName @ $roomName'),
+
+                            // Game info
+                            Spacer(),
+                            if (turn != null && turn > 0)
+                              Text('Tour $turn, Phase $phaseNumber'),   // TODO at the end of the game, phaseNumber is null
+
+                          ],
+                        ),
+
+                        // Storyteller name
+                        if (storytellerName?.isNotEmpty == true)
+                          ...[
+                            AppResources.SpacerTiny,
+                            Text(storytellerName == playerName
+                              ? "Vous êtes le conteur"
+                              : "Le compteur est $storytellerName"),
+                          ],
+
+                        if (sentence?.isNotEmpty == true)
+                          ...[
+                            AppResources.SpacerTiny,
+                            Text(
+                              sentence,
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
 
                       ],
                     ),
-
-                    // Storyteller name
-                    if (storytellerName?.isNotEmpty == true)
-                      ...[
-                        AppResources.SpacerTiny,
-                        Text(storytellerName == playerName
-                          ? "Vous êtes le conteur"
-                          : "Le compteur est $storytellerName"),
-                      ],
-
-                    // Instructions
-                    AppResources.SpacerTiny,
-                    Text(instructions),
-
-                  ],
-                ),
-              ),
-            ),
-
-            // Actions
-            PopupMenuButton<int>(
-              itemBuilder: (BuildContext context) => [
-                PopupMenuItem<int>(
-                  value: 0,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Icon(Icons.exit_to_app),
-                      AppResources.SpacerTiny,
-                      Text('Quitter la partie'),
-                    ],
                   ),
                 ),
+
+                // Actions
+                PopupMenuButton<int>(
+                  itemBuilder: (BuildContext context) => [
+                    PopupMenuItem<int>(
+                      value: 0,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Icon(Icons.exit_to_app),
+                          AppResources.SpacerTiny,
+                          Text('Quitter la partie'),
+                        ],
+                      ),
+                    ),
+                  ],
+                  onSelected: (index) async {
+                    if (await GamePage.askExit(context))
+                      Navigator.of(context).pop();
+                  },
+                ),
+
               ],
-              onSelected: (index) async {
-                if (await GamePage.askExit(context))
-                  Navigator.of(context).pop();
-              },
             ),
 
+            // Instructions
+            AppResources.SpacerTiny,
+            Container(
+              color: instructionsColor,
+              padding: const EdgeInsets.all(8),
+              alignment: Alignment.center,
+              child: Text(instructions),
+            ),
           ],
         ),
       ),
@@ -291,38 +319,40 @@ class WaitingLobby extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return Material(
       color: Theme.of(context).backgroundColor,
-      padding: _pageContentPadding,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
+      child: Padding(
+        padding: _pageContentPadding,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
 
-          // Counter
-          Text(plural(playersName.length, 'joueur')),
+            // Counter
+            Text(plural(playersName.length, 'joueur')),
 
-          // Players
-          AppResources.SpacerMedium,
-          ...playersName.map((p) => Card(
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text(
-                p
+            // Players
+            AppResources.SpacerMedium,
+            ...playersName.map((p) => Card(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  p
+                ),
               ),
-            ),
-          )).toList(growable: false),
+            )).toList(growable: false),
 
-          // Start button
-          if (showStartButton)
-            ...[
-              Spacer(),
-              AsyncButton(
-                text: 'Commencer',
-                onPressed: onStartGame,   // TODO min 4 players
-              )
-            ],
+            // Start button
+            if (showStartButton)
+              ...[
+                Spacer(),
+                AsyncButton(
+                  text: 'Commencer',
+                  onPressed: onStartGame,   // TODO min 4 players
+                )
+              ],
 
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -437,19 +467,10 @@ class CardPicker extends StatefulWidget {
 }
 
 class _CardPickerState extends State<CardPicker> {
-  int _currentCardIndex = 0;
+  final _pageController = PageController();
   String _sentence;
 
-  @override
-  void didUpdateWidget(CardPicker oldWidget) {
-    // Reset _currentCardIndex if cards have changed
-   if (!areCardsEquals(oldWidget.cards, widget.cards)) {
-      _currentCardIndex = 0;
-      print('didUpdateWidget._currentCardIndex = 0');
-    }
-
-    super.didUpdateWidget(oldWidget);
-  }
+  int get _currentCardIndex => _pageController.hasClients && _pageController.page != null ? _pageController.page.round() : _pageController.initialPage;
 
   bool areCardsEquals(List<CardData> cardsA, List<CardData> cardsB) {
     if (identical(cardsA, cardsB))    // identical(null, null) returns true
@@ -463,80 +484,86 @@ class _CardPickerState extends State<CardPicker> {
   Widget build(BuildContext context) {
     return Consumer<GamePageBloc>(
       builder: (context, bloc, _) {
+
+        // If there is no cards
+        if (widget.cards?.isNotEmpty != true)
+          return Center(
+            child: Icon(Icons.remove_circle_outline),
+          );
+
+        // If there is at least one card
         return Column(
           children: <Widget>[
 
             // Image gallery
             Expanded(
-              child: () {
+              child: Stack(
+                children: <Widget>[
 
-                // If there is no cards
-                if (widget.cards?.isNotEmpty != true)
-                  return Center(
-                    child: Icon(Icons.remove_circle_outline),
-                  );
-
-                // If there is at least one card
-                return Stack(
-                  children: <Widget>[
-
-                    // Image
-                    PhotoViewGallery(
-                      scrollPhysics: const BouncingScrollPhysics(),
-                      pageOptions: widget.cards.map((card) {
-                        return PhotoViewGalleryPageOptions(
-                          imageProvider: NetworkImage(WebServices.getCardUrl(card.filename)),
-                          initialScale: PhotoViewComputedScale.contained * 0.8,
-                          minScale: PhotoViewComputedScale.contained * 0.5,
-                          maxScale: PhotoViewComputedScale.contained * 1.5,
-                          //heroAttributes: HeroAttributes(tag: galleryItems[index].id),
-                        );
-                      }).toList(growable: false),
-                      loadingBuilder: (context, event) {
-                        /*return BlurHash(
+                  // Image
+                  PhotoViewGallery(
+                    pageController: _pageController,
+                    scrollPhysics: const BouncingScrollPhysics(),
+                    pageOptions: widget.cards.map((card) {
+                      return PhotoViewGalleryPageOptions(
+                        key: ValueKey(card.id),
+                        imageProvider: NetworkImage(WebServices.getCardUrl(card.filename)),
+                        initialScale: PhotoViewComputedScale.contained * 0.8,
+                        minScale: PhotoViewComputedScale.contained * 0.5,
+                        maxScale: PhotoViewComputedScale.contained * 1.5,
+                        //heroAttributes: HeroAttributes(tag: galleryItems[index].id),
+                      );
+                    }).toList(growable: false),
+                    loadingBuilder: (context, event) {
+                      /*return BlurHash(
                           hash: widget.cards[_currentCardIndex].blurHash,
                         );
   */
-                        return Center(
-                          child: Container(
-                            width: 20.0,
-                            height: 20.0,
-                            child: CircularProgressIndicator(
-                              value: event == null
+                      return Center(
+                        child: Container(
+                          width: 20.0,
+                          height: 20.0,
+                          child: CircularProgressIndicator(
+                            value: event == null
                                 ? 0
                                 : event.cumulativeBytesLoaded / event.expectedTotalBytes,
-                            ),
                           ),
-                        );
-                      },
-                      backgroundDecoration: const BoxDecoration(
-                        color: Colors.white,
-                      ),
-                      onPageChanged: (index) {
-                        setState(() {
-                          _currentCardIndex = index;
-                        });
-                      },
+                        ),
+                      );
+                    },
+                    backgroundDecoration: const BoxDecoration(
+                      color: Colors.white,
                     ),
+                    onPageChanged: (index) {
+                      setState(() {
+                        //_currentCardIndex = index;
+                      });
+                    },
+                  ),
 
-                    // Indicator
-                    Positioned(
-                      right: 10,
-                      bottom: 10,
-                      child: Text('Carte ${_currentCardIndex + 1} / ${widget.cards.length}'),
-                    ),
+                  // Indicator
+                  Positioned(
+                    right: 10,
+                    bottom: 10,
+                    child: Text('Carte ${_currentCardIndex + 1} / ${widget.cards.length}'),
+                  ),
 
-                  ],
-                );
-              }(),
+                ],
+              ),
             ),
 
             // Card Text
-            if (widget.cardsText?.isNotEmpty == true)
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(widget.cardsText[widget.cards[_currentCardIndex].id]),
-              ),
+            () {
+              var cardText = widget.cardsText?.getElement(widget.cards?.elementAt(_currentCardIndex)?.id);
+
+              if (cardText?.isNotEmpty == true)
+                return Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(cardText),
+                );
+
+              return SizedBox();
+            } (),
 
             // Select Button
             if (widget.onSelected != null)
@@ -550,18 +577,20 @@ class _CardPickerState extends State<CardPicker> {
 
                           // Sentence text field
                           if (widget.mustSelectSentence == true)
-                            TextFormField(
-                              decoration: InputDecoration(
-                                labelText: 'Phrase',
+                            ...[
+                              TextFormField(
+                                decoration: InputDecoration(
+                                  labelText: 'Phrase',
+                                ),
+                                textInputAction: TextInputAction.done,
+                                validator: AppResources.validatorNotEmpty,
+                                onFieldSubmitted: (value) => validate(context),
+                                onSaved: (value) => _sentence = value,
                               ),
-                              textInputAction: TextInputAction.done,
-                              validator: AppResources.validatorNotEmpty,
-                              onFieldSubmitted: (value) => validate(context),
-                              onSaved: (value) => _sentence = value,
-                            ),
+                              AppResources.SpacerSmall,
+                            ],
 
                           // Validate button
-                          AppResources.SpacerSmall,
                           RaisedButton(
                             child: Text('Valider'),
                             onPressed: widget.cards[_currentCardIndex].id != widget.playerCardID
@@ -634,8 +663,11 @@ class GamePageBloc with Disposable {
 
   final Stream<Room> roomStream;
   StreamSubscription<Room> _roomStreamSubscription;
+  int _currentPhaseNumber;
 
-  GamePageBloc({this.playerName, this.roomName, this.cards}) :
+  BuildContext context;
+
+  GamePageBloc({this.context, this.playerName, this.roomName, this.cards}) :
     roomStream = DatabaseService.getRoomStream(roomName) {
     //Subscribe to room modifications
     _roomStreamSubscription = roomStream.listen(onRoomUpdate);
@@ -647,8 +679,25 @@ class GamePageBloc with Disposable {
   void onRoomUpdate(Room room) {
     print('onRoomUpdate');
 
+    var newPhaseNumber = room.phase?.number;
+    if (_currentPhaseNumber != newPhaseNumber) {
+      String message;
+      if (newPhaseNumber == 1)
+        message = "Un nouveau tour commence";
+      else if (newPhaseNumber == 2)
+        message = "Le conteur s'est décidé";
+      else if (newPhaseNumber == 3)
+        message = "Place au vote";
+
+      if (message?.isNotEmpty == true)
+        showMessage(context, message);
+
+      _currentPhaseNumber = newPhaseNumber;
+    }
+
     var isStoryteller = playerName == room.phase?.storytellerName;
 
+    // TODO prevent calling a function again before it has done.
     // If everyone has chosen a card, go to phase 3
     if (isStoryteller && room.phase.number == Phase.Phase2_cardSelect && room.phase.playedCards.length == room.players.length)
       _toVotePhase(room);

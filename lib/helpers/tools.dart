@@ -173,6 +173,9 @@ extension ExtendedRandom on Random {
 }
 
 extension ExtendedMap<K, V> on Map<K, V> {
+  ///
+  V getElement(K key) => this[key];
+
   /// Return a LinkedHashMap sorted using [compare] function
   LinkedHashMap<K, V> sorted([int compare(MapEntry<K, V> a, MapEntry<K, V> b)]) {
     if (this.length <= 1) return this;
