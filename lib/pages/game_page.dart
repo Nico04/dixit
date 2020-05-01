@@ -680,22 +680,29 @@ class GamePageBloc with Disposable {
   Future<void> _toScoresPhase(Room room) async {
     // ---- Count score ----
     var storytellerName = room.phase.storytellerName;
+    var storytellerCardID = room.phase.playedCards[storytellerName];
     var votes = room.phase.votes;
+    var getCardOwner = (int cardID) => room.players[room.phase.playedCards.entries.firstWhere((entry) => entry.value == cardID).key];
 
-    // If none or all player(s) voted for the storyteller's card, give 2 points for each players except main player
-    var storytellerCardVotes = votes[storytellerName]?.length ?? 0;
+    // If none or all player(s) voted for the storyteller's card
+    var storytellerCardVotes = votes[storytellerCardID]?.length ?? 0;
     if (storytellerCardVotes == 0 || storytellerCardVotes == room.players.length - 1) {
+      // Give 2 points for each players except main player
       for (var player in room.players.values) {
         if (player.name != storytellerName)
           player.score += 2;
       }
+
+      // Give 1 point to the owner of the card voted by the storyteller
+      var storytellerVotedCardID = votes.entries.firstWhere((entry) => entry.value.contains(storytellerName)).key;
+      getCardOwner(storytellerVotedCardID).score += 1;
     }
 
     // If not
     else {
       // For each card vote
       for (var voteEntry in votes.entries) {
-        var cardOwner = room.players[room.phase.playedCards.entries.firstWhere((entry) => entry.value == voteEntry.key).key];
+        var cardOwner = getCardOwner(voteEntry.key);
 
         // If it's the storyteller's card
         if (cardOwner.name == storytellerName) {
@@ -708,10 +715,9 @@ class GamePageBloc with Disposable {
 
         // If not
         else {
-          // Give 1 points per voter to the owner
+          // Give 1 point per voter to the owner
           voteEntry.value.forEach((playerName) => cardOwner.score += 1);
         }
-
       }
     }
 

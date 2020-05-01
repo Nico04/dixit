@@ -35,94 +35,99 @@ class _MainPageState extends State<MainPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: ClearFocusBackground(
-        child: Column(
-          children: <Widget>[
+        child: SingleChildScrollView(
+          child: Column(
+            children: <Widget>[
 
-            // Header
-            Material(
-              elevation: 6,
-              child: Image.asset('assets/logo.png'),
-            ),
+              // Header
+              Material(
+                elevation: 6,
+                child: Image.asset('assets/logo.png'),
+              ),
 
-            // Content
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Form(
-                child: Builder(
-                  builder: (context) {
-                    return Column(
-                      children: <Widget>[
+              // Content
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Form(
+                  child: Builder(
+                    builder: (context) {
+                      return Column(
+                        children: <Widget>[
 
-                        // Instructions
-                        Text('Pour rejoindre une partie, entrez votre pseudo et le nom de la partie'),
+                          // Instructions
+                          Text('Pour rejoindre une partie, entrez votre pseudo et le nom de la partie'),
 
-                        // Pseudo
-                        AppResources.SpacerLarge,
-                        TextFormField(
-                          controller: _playerNameController,
-                          decoration: InputDecoration(
-                            labelText: 'Pseudo'
+                          // Pseudo
+                          AppResources.SpacerLarge,
+                          TextFormField(
+                            controller: _playerNameController,
+                            decoration: InputDecoration(
+                              labelText: 'Pseudo'
+                            ),
+                            textInputAction: TextInputAction.next,
+                            validator: AppResources.validatorNotEmpty,
+                            onFieldSubmitted: (value) => FocusScope.of(context).requestFocus(_roomNameFocus),
+                            onSaved: (value) => _bloc.playerName = value,
                           ),
-                          textInputAction: TextInputAction.next,
-                          validator: AppResources.validatorNotEmpty,
-                          onFieldSubmitted: (value) => FocusScope.of(context).requestFocus(_roomNameFocus),
-                          onSaved: (value) => _bloc.playerName = value,
-                        ),
 
-                        // Room
-                        AppResources.SpacerSmall,
-                        TextFormField(
-                          decoration: InputDecoration(
-                            labelText: 'Nom de la partie',
+                          // Room
+                          AppResources.SpacerSmall,
+                          TextFormField(
+                            decoration: InputDecoration(
+                              labelText: 'Nom de la partie',
+                            ),
+                            textInputAction: TextInputAction.done,
+                            focusNode: _roomNameFocus,
+                            validator: (value) => AppResources.validatorNotEmpty(value) ?? (value == 'length' ? 'Invalide' : null),
+                            onFieldSubmitted: (value) => _bloc.validate(context),
+                            onSaved: (value) => _bloc.roomName = value,
                           ),
-                          textInputAction: TextInputAction.done,
-                          focusNode: _roomNameFocus,
-                          validator: (value) => AppResources.validatorNotEmpty(value) ?? (value == 'length' ? 'Invalide' : null),
-                          onFieldSubmitted: (value) => _bloc.validate(context),
-                          onSaved: (value) => _bloc.roomName = value,
-                        ),
 
-                        // Button or status
-                        AppResources.SpacerLarge,
-                        StreamBuilder<bool>(
-                          stream: _bloc.isReady,
-                          initialData: _bloc.isReady.value,
-                          builder: (context, snapshot) {
-                            if (snapshot.hasError)
-                              return Column(
-                                children: <Widget>[
-                                  Tooltip(
-                                    child: Text('Une erreur est survenue'),
-                                    message: snapshot.error.toString(),
-                                  ),
-                                  RaisedButton(
-                                    child: Text('Re-essayer'),
-                                    onPressed: _bloc.init,
-                                  )
-                                ],
+                          // Button or status
+                          AppResources.SpacerLarge,
+                          StreamBuilder<bool>(
+                            stream: _bloc.isBusy,
+                            initialData: _bloc.isBusy.value,
+                            builder: (context, snapshot) {
+                              if (snapshot.hasError)
+                                return Column(
+                                  children: <Widget>[
+                                    Tooltip(
+                                      child: Text('Une erreur est survenue'),
+                                      message: snapshot.error.toString(),
+                                    ),
+                                    RaisedButton(
+                                      child: Text('Re-essayer'),
+                                      onPressed: _bloc.init,
+                                    )
+                                  ],
+                                );
+
+                              /*
+                              if (snapshot.data != true)
+                                return Column(
+                                  children: <Widget>[
+                                    Text('Le jeu est en cours de préparation'),
+                                    CircularProgressIndicator(),
+                                  ],
+                                );*/
+
+                              return AsyncButton(
+                                text: 'Rejoindre partie',
+                                onPressed: () => _bloc.validate(context),
+                                isBusy: snapshot.data,
+                                isBusyChild: CircularProgressIndicator(),
                               );
-
-                            if (snapshot.data != true)
-                              return Column(
-                                children: <Widget>[
-                                  Text('Le jeu est en cours de préparation'),
-                                  CircularProgressIndicator(),
-                                ],
-                              );
-
-                            return AsyncButton(
-                              text: 'Rejoindre partie',
-                              onPressed: () => _bloc.validate(context),
-                            );
-                          }
-                        )
-                      ],
-                    );
-                  }
+                            }
+                          )
+                        ],
+                      );
+                    }
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -135,7 +140,7 @@ class MainPageBloc with Disposable {
 
   Map<int, CardData> cards;     // All existing cards
 
-  final isReady = BehaviorSubject.seeded(false);
+  final isBusy = BehaviorSubject.seeded(true);
 
   MainPageBloc() {
     init();
@@ -143,16 +148,20 @@ class MainPageBloc with Disposable {
 
   Future<void> init() async {
     try {
-      isReady.add(false);   // Needed for when re-trying
+      isBusy.add(true);   // Needed for when re-trying
       cards = await WebServices.getCardsNames();
-      isReady.add(true);
     } catch (e) {
-      isReady.addError(e);
+      isBusy.addError(e);
+    } finally {
+      if (isBusy.value != false)
+        isBusy.add(false);
     }
   }
 
   Future<void> validate(BuildContext context) async {
+    isBusy.add(true);
     await Future.delayed(Duration(seconds: 4));
+    isBusy.add(false);
     return;
 
     // Clear focus
@@ -228,7 +237,7 @@ class MainPageBloc with Disposable {
 
   @override
   void dispose() {
-    isReady.close();
+    isBusy.close();
     super.dispose();
   }
 }
