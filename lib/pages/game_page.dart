@@ -351,6 +351,14 @@ class _GameBoardState extends State<GameBoard> {
   Widget build(BuildContext context) {
     return Consumer<GamePageBloc>(
       builder: (context, bloc, _) {
+        var todoTabIndex = () {
+          if (widget.onHandCardSelected != null )
+            return 0;
+          if (widget.onBoardCardSelected != null )
+            return 1;
+          return null;
+        } ();
+
         return Scaffold(
           body: IndexedStack(
             children: <Widget>[
@@ -377,14 +385,19 @@ class _GameBoardState extends State<GameBoard> {
             index: _currentTabIndex,
           ),
           bottomNavigationBar: BottomNavigationBar(
-            items: const <BottomNavigationBarItem>[
+            items: [
               BottomNavigationBarItem(
-                icon: Icon(Icons.pan_tool),
+                icon: AnimatedIconHighlight(
+                  child: Icon(Icons.pan_tool),
+                  playing: todoTabIndex == 0 && _currentTabIndex != todoTabIndex,
+                ),
                 title: Text('Main'),
-                //backgroundColor: AppResources.ColorLightGrey,
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.table_chart),
+                icon: AnimatedIconHighlight(
+                  child: Icon(Icons.table_chart),
+                  playing: todoTabIndex == 1 && _currentTabIndex != todoTabIndex,
+                ),
                 title: Text('Table'),
               ),
               BottomNavigationBarItem(
@@ -399,6 +412,8 @@ class _GameBoardState extends State<GameBoard> {
               });
             },
             showUnselectedLabels: false,
+            backgroundColor: AppResources.ColorSand,
+            selectedItemColor: AppResources.ColorRed,
           ),
         );
       }
