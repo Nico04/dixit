@@ -25,7 +25,7 @@ class AsyncButton extends StatelessWidget {
             color: AppResources.ColorRed,
           ),
         ),
-        secondChild: isBusyChild,
+        secondChild: isBusyChild ?? CircularProgressIndicator(),
         crossFadeState: isBusy != true ? CrossFadeState.showFirst : CrossFadeState.showSecond,
       ),
       onPressed: isBusy == true ? null : onPressed,

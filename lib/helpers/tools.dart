@@ -125,6 +125,31 @@ DateTime dateFromString(String dateString) => DateTime.tryParse(dateString ?? ''
 
 String dateToString(DateTime date) => date?.toUtc()?.toIso8601String();
 
+/// Compares two iterables for deep equality.
+/// Copied from flutter's listEquals()
+///
+/// Returns true if the iterables are both null, or if they are both non-null, have
+/// the same length, and contain the same members in the same order. Returns
+/// false otherwise.
+///
+/// The term "deep" above refers to the first level of equality: if the elements
+/// are maps, lists, sets, or other collections/composite objects, then the
+/// values of those elements are not compared element by element unless their
+/// equality operators ([Object.operator==]) do so.
+bool iterableEquals<T>(Iterable<T> a, Iterable<T> b) {
+  if (a == null)
+    return b == null;
+  if (b == null || a.length != b.length)
+    return false;
+  if (identical(a, b))
+    return true;
+  for (int index = 0; index < a.length; index += 1) {
+    if (a.elementAt(index) != b.elementAt(index))
+      return false;
+  }
+  return true;
+}
+
 extension ExtendedString on String {
   /// Normalize a string by removing diacritics and transform to lower case
   String get normalized => removeDiacritics(this.toLowerCase());

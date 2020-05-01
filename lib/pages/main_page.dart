@@ -159,11 +159,6 @@ class MainPageBloc with Disposable {
   }
 
   Future<void> validate(BuildContext context) async {
-    isBusy.add(true);
-    await Future.delayed(Duration(seconds: 4));
-    isBusy.add(false);
-    return;
-
     // Clear focus
     clearFocus(context);   // Keyboard is closed automatically when called from "done" keyboard key, but not in other cases.
 
@@ -180,6 +175,8 @@ class MainPageBloc with Disposable {
 
     // Join room
     try {
+      isBusy.add(true);
+
       await DatabaseService.editRoomInTransaction(roomName, (room) {
         var hasBeenModified = false;
 
@@ -232,6 +229,11 @@ class MainPageBloc with Disposable {
     catch (e) {
       showMessage(context, e.toString(), isError: true);
       return;
+    }
+
+    finally {
+      if (isBusy.value != false)
+        isBusy.add(false);
     }
   }
 

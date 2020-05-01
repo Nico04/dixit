@@ -6,6 +6,8 @@ import 'package:dixit/models/_models.dart';
 import 'package:dixit/resources/resources.dart';
 import 'package:dixit/services/database_service.dart';
 import 'package:dixit/services/web_services.dart';
+import 'package:dixit/widgets/_widgets.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
@@ -288,7 +290,8 @@ class WaitingLobby extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return Container(
+      color: Theme.of(context).backgroundColor,
       padding: _pageContentPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -311,9 +314,9 @@ class WaitingLobby extends StatelessWidget {
           // Start button
           if (showStartButton)
             ...[
-              AppResources.SpacerMedium,
-              RaisedButton(
-                child: Text('Commencer'),
+              Spacer(),
+              AsyncButton(
+                text: 'Commencer',
                 onPressed: onStartGame,   // TODO min 4 players
               )
             ],
@@ -417,6 +420,25 @@ class CardPicker extends StatefulWidget {
 class _CardPickerState extends State<CardPicker> {
   int _currentCardIndex = 0;
   String _sentence;
+
+  @override
+  void didUpdateWidget(CardPicker oldWidget) {
+    // Reset _currentCardIndex if cards have changed
+   if (!areCardsEquals(oldWidget.cards, widget.cards)) {
+      _currentCardIndex = 0;
+      print('didUpdateWidget._currentCardIndex = 0');
+    }
+
+    super.didUpdateWidget(oldWidget);
+  }
+
+  bool areCardsEquals(List<CardData> cardsA, List<CardData> cardsB) {
+    if (identical(cardsA, cardsB))    // identical(null, null) returns true
+      return true;
+    if (cardsA?.length != cardsB?.length)
+      return false;
+    return iterableEquals(cardsA?.map((card) => card.id), cardsB?.map((card) => card.id));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -663,7 +685,7 @@ class GamePageBloc with Disposable {
 
   Future<void> _toVotePhase(Room room) async {
     // Shuffle played card
-    room.phase.playedCards = Map.fromEntries(room.phase.playedCards.entries.toList(growable: false)..shuffle());
+    room.phase.playedCards = Map.fromEntries(room.phase.playedCards.entries.toList(growable: false)..shuffle());    //TODO because order is not guaranteed by Firebase, this may be pointless ?
 
     // Update phase
     room.phase.number = Phase.Phase3_vote;

@@ -29,6 +29,9 @@ class App extends StatelessWidget {
         accentColor: AppResources.ColorRed,
         backgroundColor: AppResources.ColorOrange,
         scaffoldBackgroundColor: AppResources.ColorOrange,
+        cardTheme: CardTheme(
+          color: AppResources.ColorSand,
+        )
       ),
       home: MainPage(),
     );
