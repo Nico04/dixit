@@ -64,6 +64,7 @@ class GamePage extends StatelessWidget {
                     );
                   }
 
+                  // Vars
                   var player = room.players[bloc.playerName];
                   var isHost = player.position == 1;
 
@@ -79,23 +80,26 @@ class GamePage extends StatelessWidget {
                     );
                   }
 
+                  // Vars
                   var isStoryteller = player.name == room.phase?.storytellerName;
-                  var phaseNumber = room.phase?.number ?? -1;
+                  var phaseNumber = room.phase?.number;
 
                   bool mustChooseSentence = false;
                   CardPickerSelectCallback onHandCardSelectedCallback;
                   CardPickerSelectCallback onBoardCardSelectedCallback;
 
+                  // Phase 1
                   if (phaseNumber == Phase.Phase1_storytellerSentence) {
                     instructionsColor = _buildInstructionsColor(isStoryteller);
                     instructionsText = isStoryteller
-                      ? 'Choisir une carte et une phrase'
+                      ? 'Vous êtes le prochain conteur\nchoisir une carte et une phrase'
                       : _buildWaitText([room.phase.storytellerName]);
                     mustChooseSentence = isStoryteller;
                     if (isStoryteller)
                       onHandCardSelectedCallback = (card, sentence) => bloc.setSentence(room, card, sentence);
                   }
 
+                  // Phase 2
                   else if (phaseNumber == Phase.Phase2_cardSelect) {
                     var waitedPlayersNames = room.players.keys.where((playerName) => !room.phase.playedCards.keys.contains(playerName));
                     var hasPlayerSelected = !waitedPlayersNames.contains(player.name);
@@ -108,6 +112,7 @@ class GamePage extends StatelessWidget {
                       onHandCardSelectedCallback = (card, _) => bloc.selectCard(room, card);
                   }
 
+                  // Phase 3
                   else if (phaseNumber == Phase.Phase3_vote) {
                     var waitedPlayersNames = room.players.keys.where((playerName) => !room.phase.votes.values.any((players) => players.contains(playerName)));
                     var hasPlayerVoted = !waitedPlayersNames.contains(player.name);
@@ -119,12 +124,13 @@ class GamePage extends StatelessWidget {
                       onBoardCardSelectedCallback = (card, _) => bloc.voteCard(room, card);
                   }
 
-                  else if (phaseNumber == -1) {
+                  // End of game
+                  else if (phaseNumber == null) {
                     instructionsColor = _buildInstructionsColor(false);
                     instructionsText = "Partie terminée !";
                   }
 
-                  // Game board
+                  // Build Game board
                   return GameBoard(
                     playerCards: bloc.getCardDataFromIDs(player.cards),
                     boardCards: () {
@@ -149,6 +155,9 @@ class GamePage extends StatelessWidget {
 
                 } ();
 
+                // When between phase 4 and 1
+                var displayPreviousPhase = room?.phase?.number == Phase.Phase1_storytellerSentence && room?.previousPhase != null;
+
                 // Build page
                 return Column(
                   children: <Widget>[
@@ -157,18 +166,23 @@ class GamePage extends StatelessWidget {
                     GameHeader(
                       roomName: roomName,
                       playerName: playerName,
-                      storytellerName: room?.phase?.storytellerName,
-                      sentence: room?.phase?.sentence,
+                      storytellerText: () {
+                        var storytellerName = displayPreviousPhase ? room.previousPhase.storytellerName : room?.phase?.storytellerName;
+                        return storytellerName == playerName
+                          ? "Vous êtes le conteur"
+                          : "Le conteur est $storytellerName";
+                      } (),
+                      sentence: displayPreviousPhase ? room.previousPhase.sentence : room?.phase?.sentence,
                       instructionsColor: instructionsColor,
                       instructions: instructionsText,
-                      turn: room?.turn,
-                      phaseNumber: room?.phase?.number,
+                      turn: room != null ? room.turn - (displayPreviousPhase ? 1 : 0) : null,
+                      phaseNumber: displayPreviousPhase ? room.previousPhase.number : room?.phase?.number,
                     ),
 
                     // Content
                     Expanded(
                       child: child,
-                    )
+                    ),
 
                   ],
                 );
@@ -200,14 +214,14 @@ class GamePage extends StatelessWidget {
 class GameHeader extends StatelessWidget {
   final String roomName;
   final String playerName;
-  final String storytellerName;
+  final String storytellerText;
   final String sentence;
   final String instructions;
   final Color instructionsColor;
   final int turn;
   final int phaseNumber;
 
-  const GameHeader({Key key, this.instructionsColor, this.roomName, this.playerName, this.storytellerName, this.instructions, this.turn, this.phaseNumber, this.sentence}) : super(key: key);
+  const GameHeader({Key key, this.instructionsColor, this.roomName, this.playerName, this.storytellerText, this.instructions, this.turn, this.phaseNumber, this.sentence}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -240,18 +254,16 @@ class GameHeader extends StatelessWidget {
                             // Game info
                             Spacer(),
                             if (turn != null && turn > 0)
-                              Text('Tour $turn, Phase $phaseNumber'),   // TODO at the end of the game, phaseNumber is null
+                              Text('Tour $turn, Phase $phaseNumber'),   // TODO at the end of the game, phaseNumber is null. Maybe just remove phase number from header ?
 
                           ],
                         ),
 
                         // Storyteller name
-                        if (storytellerName?.isNotEmpty == true)
+                        if (storytellerText?.isNotEmpty == true)
                           ...[
                             AppResources.SpacerTiny,
-                            Text(storytellerName == playerName
-                              ? "Vous êtes le conteur"
-                              : "Le conteur est $storytellerName"),
+                            Text(storytellerText),
                           ],
 
                         if (sentence?.isNotEmpty == true)
@@ -682,8 +694,8 @@ class GamePageBloc with Disposable {
     var newPhaseNumber = room.phase?.number;
     if (_currentPhaseNumber != newPhaseNumber) {
       String message;
-      if (newPhaseNumber == 1)
-        message = "Un nouveau tour commence";
+      if (room.previousPhase.number == 4)
+        message = "Le tour est terminé";
       else if (newPhaseNumber == 2)
         message = "Le conteur s'est décidé";
       else if (newPhaseNumber == 3)
