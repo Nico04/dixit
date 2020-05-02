@@ -7,12 +7,14 @@ import 'package:dixit/resources/resources.dart';
 import 'package:dixit/services/database_service.dart';
 import 'package:dixit/services/web_services.dart';
 import 'package:dixit/widgets/_widgets.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blurhash/flutter_blurhash.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:provider/provider.dart';
+import 'package:rxdart/rxdart.dart';
 import 'package:screen/screen.dart';
 
 const _pageContentPadding = EdgeInsets.all(15);
@@ -149,7 +151,10 @@ class GamePage extends StatelessWidget {
                     onBoardCardSelected: onBoardCardSelectedCallback,
                     mustChooseSentence: mustChooseSentence,
                     scores: room.players.map((playerName, player) => MapEntry(playerName, player.score)),
-                    boardCardsText: phaseNumber == Phase.Phase1_storytellerSentence
+                    boardCardsTextTop: phaseNumber == Phase.Phase1_storytellerSentence
+                      ? room.previousPhase?.playedCards?.map((playerName, cardID) => MapEntry(cardID, playerName))
+                      : null,
+                    boardCardsTextBottom: phaseNumber == Phase.Phase1_storytellerSentence
                       ? room.previousPhase?.votes?.map((cardID, players) => MapEntry(cardID, players.join('\n')))
                       : null,
                   );
@@ -379,9 +384,10 @@ class GameBoard extends StatefulWidget {
   final bool mustChooseSentence;
   final int playedCardID;
   final Map<String, int> scores;    // <playerName, score>
-  final Map<int, String> boardCardsText;    // <cardID, text>
+  final Map<int, String> boardCardsTextTop;    // <cardID, text>
+  final Map<int, String> boardCardsTextBottom; // <cardID, text>
 
-  const GameBoard({Key key, this.playerCards, this.boardCards, this.onHandCardSelected, this.onBoardCardSelected, this.mustChooseSentence, this.playedCardID, this.scores, this.boardCardsText}) : super(key: key);
+  const GameBoard({Key key, this.playerCards, this.boardCards, this.onHandCardSelected, this.onBoardCardSelected, this.mustChooseSentence, this.playedCardID, this.scores, this.boardCardsTextBottom, this.boardCardsTextTop}) : super(key: key);
 
   @override
   _GameBoardState createState() => _GameBoardState();
@@ -407,18 +413,19 @@ class _GameBoardState extends State<GameBoard> {
             children: <Widget>[
 
               // Player Hand
-              CardPicker(
+              CardsView(
                 cards: widget.playerCards,
                 mustSelectSentence: widget.mustChooseSentence,
                 onSelected: widget.onHandCardSelected,
               ),
 
               // Table
-              CardPicker(
+              CardsView(
                 cards: widget.boardCards,
                 playerCardID: widget.playedCardID,
                 onSelected: widget.onBoardCardSelected,
-                cardsText: widget.boardCardsText,
+                cardsTextTop: widget.boardCardsTextTop,
+                cardsTextBottom: widget.boardCardsTextBottom,
               ),
 
               // Scores
@@ -464,166 +471,267 @@ class _GameBoardState extends State<GameBoard> {
   }
 }
 
-typedef CardPickerSelectCallback = void Function(int card, String sentence);
+typedef CardPickerSelectCallback = Future<void> Function(int card, String sentence);
 
-class CardPicker extends StatefulWidget {
+class CardsView extends StatelessWidget {
   final List<CardData> cards;
   final int playerCardID;
   final bool mustSelectSentence;
   final CardPickerSelectCallback onSelected;
-  final Map<int, String> cardsText;   // <cardIndex, text>
+  final Map<int, String> cardsTextTop;   // <cardIndex, text>
+  final Map<int, String> cardsTextBottom;   // <cardIndex, text>
 
-  const CardPicker({Key key, this.cards, this.onSelected, this.mustSelectSentence, this.playerCardID, this.cardsText}) : super(key: key);
+  const CardsView({Key key, this.cards, this.onSelected, this.mustSelectSentence, this.playerCardID, this.cardsTextBottom, this.cardsTextTop}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    // If there is no cards
+    if (cards?.isNotEmpty != true)
+      return Center(
+        child: Icon(
+          Icons.remove_circle_outline,
+          size: 40,
+        ),
+      );
+
+    // If there is at least one card
+    return GridView.count(
+      crossAxisCount: 3,
+      childAspectRatio: 1 / 1.5,
+      children: cards.map((card) => _buildCard(
+        card,
+        topText: cardsTextTop?.getElement(card.id),
+        bottomText: cardsTextBottom?.getElement(card.id),
+        onPressed: () => navigateTo(context, () => CardPicker(
+          cards: cards,
+          initialCardID: card.id,
+          playerCardID: playerCardID,
+          mustSelectSentence: mustSelectSentence,
+          onSelected: onSelected,
+        )),
+      )).toList(growable: false),
+      padding: _pageContentPadding,
+    );
+  }
+
+  Widget _buildCard(CardData card, { String topText, String bottomText, VoidCallback onPressed }) {
+    return Card(
+      margin: EdgeInsets.all(6),
+      elevation: 6,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Stack(
+        children: <Widget>[
+
+          // Image
+          BlurHash(
+            hash: card.blurHash,
+            image: WebServices.getCardUrl(card.filename),
+            duration: Duration(seconds: 1),
+          ),
+
+          // Top Text
+          if (topText?.isNotEmpty == true)
+            Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: _buildTextZone(topText)
+            ),
+
+          // Bottom Text
+          if (bottomText?.isNotEmpty == true)
+            Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: _buildTextZone(bottomText)
+            ),
+
+          // Tap detector
+          Positioned.fill(
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                child: Container(),
+                onTap: onPressed,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTextZone(String text) {
+    return Container(
+      color: AppResources.ColorSand.withOpacity(0.6),
+      alignment: Alignment.center,
+      padding: EdgeInsets.all(5),
+      child: Text(text),
+    );
+  }
+}
+
+class CardPicker extends StatefulWidget {
+  final List<CardData> cards;
+  final int initialCardID;
+  final int playerCardID;
+  final bool mustSelectSentence;
+  final CardPickerSelectCallback onSelected;
+
+  const CardPicker({Key key, this.cards, this.playerCardID, this.mustSelectSentence, this.onSelected, this.initialCardID}) : super(key: key);
 
   @override
   _CardPickerState createState() => _CardPickerState();
 }
 
 class _CardPickerState extends State<CardPicker> {
-  final _pageController = PageController();
+  PageController _pageController;
   String _sentence;
 
-  int get _currentCardIndex => _pageController.hasClients && _pageController?.position?.pixels != null ? _pageController.page.round() : _pageController.initialPage;
+  int get _currentCardIndex => _pageController.hasClients && (_pageController.position.pixels == null || (_pageController.position.minScrollExtent != null && _pageController.position.maxScrollExtent != null)) && _pageController.page != null
+    ? _pageController.page.round()
+    : _pageController.initialPage;
 
-  bool areCardsEquals(List<CardData> cardsA, List<CardData> cardsB) {
-    if (identical(cardsA, cardsB))    // identical(null, null) returns true
-      return true;
-    if (cardsA?.length != cardsB?.length)
-      return false;
-    return iterableEquals(cardsA?.map((card) => card.id), cardsB?.map((card) => card.id));
+  final isBusy = BehaviorSubject.seeded(false);
+
+  @override
+  void initState() {
+    _pageController = PageController(initialPage: widget.cards.indexWhere((card) => card.id == widget.initialCardID));
+    super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<GamePageBloc>(
-      builder: (context, bloc, _) {
+    return Scaffold(
+      body: Column(
+        children: <Widget>[
 
-        // If there is no cards
-        if (widget.cards?.isNotEmpty != true)
-          return Center(
-            child: Icon(Icons.remove_circle_outline),
-          );
+          // Image gallery
+          Expanded(
+            child: Stack(
+              children: <Widget>[
 
-        // If there is at least one card
-        return Column(
-          children: <Widget>[
+                // Image
+                PhotoViewGallery(
+                  pageController: _pageController,
+                  scrollPhysics: const BouncingScrollPhysics(),
+                  pageOptions: widget.cards.map((card) {
+                    return PhotoViewGalleryPageOptions(
+                      key: ValueKey(card.id),
+                      imageProvider: NetworkImage(WebServices.getCardUrl(card.filename)),
+                      initialScale: PhotoViewComputedScale.contained * 0.8,
+                      minScale: PhotoViewComputedScale.contained * 0.5,
+                      maxScale: PhotoViewComputedScale.contained * 1.5,
+                      //heroAttributes: HeroAttributes(tag: galleryItems[index].id),
+                    );
+                  }).toList(growable: false),
+                  loadingBuilder: (context, event) {
+                    return BlurHash(
+                      hash: widget.cards[_currentCardIndex].blurHash,
+                    );
 
-            // Image gallery
-            Expanded(
-              child: Stack(
-                children: <Widget>[
-
-                  // Image
-                  PhotoViewGallery(
-                    pageController: _pageController,
-                    scrollPhysics: const BouncingScrollPhysics(),
-                    pageOptions: widget.cards.map((card) {
-                      return PhotoViewGalleryPageOptions(
-                        key: ValueKey(card.id),
-                        imageProvider: NetworkImage(WebServices.getCardUrl(card.filename)),
-                        initialScale: PhotoViewComputedScale.contained * 0.8,
-                        minScale: PhotoViewComputedScale.contained * 0.5,
-                        maxScale: PhotoViewComputedScale.contained * 1.5,
-                        //heroAttributes: HeroAttributes(tag: galleryItems[index].id),
-                      );
-                    }).toList(growable: false),
-                    loadingBuilder: (context, event) {
-                      return BlurHash(
-                        hash: widget.cards[_currentCardIndex].blurHash,
-                      );
-
-                      return Center(
-                        child: Container(
-                          width: 20.0,
-                          height: 20.0,
-                          child: CircularProgressIndicator(
-                            value: event == null
-                              ? 0
-                              : event.cumulativeBytesLoaded / event.expectedTotalBytes,
-                          ),
+                    return Center(
+                      child: Container(
+                        width: 20.0,
+                        height: 20.0,
+                        child: CircularProgressIndicator(
+                          value: event == null
+                            ? 0
+                            : event.cumulativeBytesLoaded / event.expectedTotalBytes,
                         ),
-                      );
-                    },
-                    backgroundDecoration: const BoxDecoration(
-                      color: Colors.white,
-                    ),
-                    onPageChanged: (index) {
-                      setState(() {
-                        //_currentCardIndex = index;
-                      });
-                    },
+                      ),
+                    );
+                  },
+                  backgroundDecoration: const BoxDecoration(
+                    color: Colors.white,
                   ),
+                  onPageChanged: (index) {
+                    setState(() {
+                      //_currentCardIndex = index;
+                    });
+                  },
+                ),
 
-                  // Indicator
-                  Positioned(
-                    right: 10,
-                    bottom: 10,
-                    child: Text('Carte ${_currentCardIndex + 1} / ${widget.cards.length}'),
-                  ),
+                // Indicator
+                Positioned(
+                  right: 10,
+                  bottom: 10,
+                  child: Text('Carte ${_currentCardIndex + 1} / ${widget.cards.length}'),
+                ),
 
-                ],
+              ],
+            ),
+          ),
+
+          // Card Text
+          /**() {
+            var cardText = widget.cardsTextBottom?.getElement(widget.cards?.elementAt(_currentCardIndex)?.id);
+
+            if (cardText?.isNotEmpty == true)
+              return Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(cardText),
+              );
+
+            return SizedBox();
+          } (),*/
+
+          // Select Button
+          if (widget.onSelected != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
+              child: Form(
+                child: Builder(
+                  builder: (context) {
+                    return Column(
+                      children: <Widget>[
+
+                        // Sentence text field
+                        if (widget.mustSelectSentence == true)
+                          ...[
+                            TextFormField(
+                              decoration: InputDecoration(
+                                labelText: 'Phrase',
+                              ),
+                              textInputAction: TextInputAction.done,
+                              validator: AppResources.validatorNotEmpty,
+                              onFieldSubmitted: (value) => validate(context),
+                              onSaved: (value) => _sentence = value,
+                            ),
+                            AppResources.SpacerSmall,
+                          ],
+
+                        // Validate button
+                        StreamBuilder<bool>(
+                          stream: isBusy,
+                          initialData: isBusy.value,
+                          builder: (context, snapshot) {
+                            return AsyncButton(
+                              text: 'Valider',
+                              onPressed: widget.cards[_currentCardIndex].id != widget.playerCardID
+                                ? () => validate(context)
+                                : null,
+                              isBusy: snapshot.data,
+                            );
+                          }
+                        ),
+                      ],
+                    );
+                  }
+                ),
               ),
             ),
 
-            // Card Text
-            () {
-              var cardText = widget.cardsText?.getElement(widget.cards?.elementAt(_currentCardIndex)?.id);
-
-              if (cardText?.isNotEmpty == true)
-                return Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(cardText),
-                );
-
-              return SizedBox();
-            } (),
-
-            // Select Button
-            if (widget.onSelected != null)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
-                child: Form(
-                  child: Builder(
-                    builder: (context) {
-                      return Column(
-                        children: <Widget>[
-
-                          // Sentence text field
-                          if (widget.mustSelectSentence == true)
-                            ...[
-                              TextFormField(
-                                decoration: InputDecoration(
-                                  labelText: 'Phrase',
-                                ),
-                                textInputAction: TextInputAction.done,
-                                validator: AppResources.validatorNotEmpty,
-                                onFieldSubmitted: (value) => validate(context),
-                                onSaved: (value) => _sentence = value,
-                              ),
-                              AppResources.SpacerSmall,
-                            ],
-
-                          // Validate button
-                          RaisedButton(
-                            child: Text('Valider'),
-                            onPressed: widget.cards[_currentCardIndex].id != widget.playerCardID
-                              ? () => validate(context)
-                              : null,
-                          ),
-                        ],
-                      );
-                    }
-                  ),
-                ),
-              ),
-
-          ],
-        );
-      }
+        ],
+      ),
     );
   }
 
-  void validate(BuildContext context) {
+  Future<void> validate(BuildContext context) async {
     // Clear focus
     clearFocus(context);   // Keyboard is closed automatically when called from "done" keyboard key, but not in other cases.
 
@@ -635,7 +743,24 @@ class _CardPickerState extends State<CardPicker> {
       return;
 
     // Callback
-    widget.onSelected(widget.cards[_currentCardIndex].id, _sentence);
+    try {
+      isBusy.add(true);
+
+      await widget.onSelected(widget.cards[_currentCardIndex].id, _sentence);
+
+      // Navigate back
+      Navigator.of(context).pop();
+    }
+
+    catch (e) {
+      isBusy.add(false);
+    }
+  }
+
+  @override
+  void dispose() {
+    isBusy.close();
+    super.dispose();
   }
 }
 
@@ -695,7 +820,7 @@ class GamePageBloc with Disposable {
     var newPhaseNumber = room.phase?.number;
     if (_currentPhaseNumber != newPhaseNumber) {
       String message;
-      if (room.previousPhase.number == 4)
+      if (room.previousPhase?.number == 4)
         message = "Le tour est terminé";
       else if (newPhaseNumber == 2)
         message = "Le conteur s'est décidé";
