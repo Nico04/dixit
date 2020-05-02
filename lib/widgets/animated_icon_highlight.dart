@@ -3,8 +3,13 @@ import 'package:flutter/material.dart';
 class AnimatedIconHighlight extends StatefulWidget {
   final Widget child;
   final bool playing;
+  final Duration duration;
+  final double loops;
 
-  const AnimatedIconHighlight({Key key, this.playing, this.child}) : super(key: key);
+  const AnimatedIconHighlight({Key key, this.playing, this.child, Duration duration, double loops}) :
+    this.duration = duration ?? const Duration(milliseconds: 1000),
+    this.loops = loops ?? 2.0,
+    super(key: key);
 
   @override
   _AnimatedIconHighlightState createState() => _AnimatedIconHighlightState();
@@ -13,10 +18,11 @@ class AnimatedIconHighlight extends StatefulWidget {
 class _AnimatedIconHighlightState extends State<AnimatedIconHighlight> with SingleTickerProviderStateMixin {
   AnimationController _controller;
   Animation<double> _animation;
+  bool _loopHasCompleted = false;
 
   @override
   void initState() {
-    _controller = AnimationController(duration: Duration(seconds: 1), vsync: this);
+    _controller = AnimationController(duration: widget.duration, vsync: this);
 
     _animation = Tween<double>(begin: 0, end: 50).animate(_controller)
       ..addListener(() => setState(() { }));
@@ -33,10 +39,17 @@ class _AnimatedIconHighlightState extends State<AnimatedIconHighlight> with Sing
   }
 
   void updatePlaying() {
-    if (widget.playing != false && !_controller.isAnimating)
-      _controller.repeat();
-    else if (widget.playing == false && _controller.isAnimating)
-      _controller.reset();
+    if (widget.playing != false && !_controller.isAnimating && !_loopHasCompleted) {
+      _controller.repeat()
+        .timeout(widget.duration * widget.loops, onTimeout: () {
+          _controller.reset();
+          _loopHasCompleted = true;
+        });
+    } else if (widget.playing == false) {
+      if (_controller.isAnimating)
+        _controller.reset();
+      _loopHasCompleted = false;
+    }
   }
 
   @override
@@ -48,7 +61,6 @@ class _AnimatedIconHighlightState extends State<AnimatedIconHighlight> with Sing
         Positioned.fill(
           child: LayoutBuilder(
             builder: (context, box) {
-              print(box);
               return CustomPaint(
                 size: Size(box.maxWidth, 50),
                 painter: CirclePainter(_animation.value),

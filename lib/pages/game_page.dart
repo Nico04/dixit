@@ -188,7 +188,7 @@ class GamePage extends StatelessWidget {
     if (waitedPlayersNames.length > 1) {
       const separator = ', ';
       text = waitedPlayersNames.join(separator);
-      text.replaceLast(separator, ' et ');
+      text = text.replaceLast(separator, ' et ');
     } else if (waitedPlayersNames.length == 1) {
       text = waitedPlayersNames.first;
     }
@@ -251,7 +251,7 @@ class GameHeader extends StatelessWidget {
                             AppResources.SpacerTiny,
                             Text(storytellerName == playerName
                               ? "Vous êtes le conteur"
-                              : "Le compteur est $storytellerName"),
+                              : "Le conteur est $storytellerName"),
                           ],
 
                         if (sentence?.isNotEmpty == true)
