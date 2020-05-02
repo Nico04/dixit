@@ -9,6 +9,7 @@ import 'package:dixit/services/web_services.dart';
 import 'package:dixit/widgets/_widgets.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_blurhash/flutter_blurhash.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:provider/provider.dart';
@@ -92,7 +93,7 @@ class GamePage extends StatelessWidget {
                   if (phaseNumber == Phase.Phase1_storytellerSentence) {
                     instructionsColor = _buildInstructionsColor(isStoryteller);
                     instructionsText = isStoryteller
-                      ? 'Vous êtes le prochain conteur\nchoisir une carte et une phrase'
+                      ? 'Vous êtes le prochain conteur\nChoisir une carte et une phrase'
                       : _buildWaitText([room.phase.storytellerName]);
                     mustChooseSentence = isStoryteller;
                     if (isStoryteller)
@@ -482,7 +483,7 @@ class _CardPickerState extends State<CardPicker> {
   final _pageController = PageController();
   String _sentence;
 
-  int get _currentCardIndex => _pageController.hasClients && _pageController.page != null ? _pageController.page.round() : _pageController.initialPage;
+  int get _currentCardIndex => _pageController.hasClients && _pageController?.position?.pixels != null ? _pageController.page.round() : _pageController.initialPage;
 
   bool areCardsEquals(List<CardData> cardsA, List<CardData> cardsB) {
     if (identical(cardsA, cardsB))    // identical(null, null) returns true
@@ -527,18 +528,18 @@ class _CardPickerState extends State<CardPicker> {
                       );
                     }).toList(growable: false),
                     loadingBuilder: (context, event) {
-                      /*return BlurHash(
-                          hash: widget.cards[_currentCardIndex].blurHash,
-                        );
-  */
+                      return BlurHash(
+                        hash: widget.cards[_currentCardIndex].blurHash,
+                      );
+
                       return Center(
                         child: Container(
                           width: 20.0,
                           height: 20.0,
                           child: CircularProgressIndicator(
                             value: event == null
-                                ? 0
-                                : event.cumulativeBytesLoaded / event.expectedTotalBytes,
+                              ? 0
+                              : event.cumulativeBytesLoaded / event.expectedTotalBytes,
                           ),
                         ),
                       );
