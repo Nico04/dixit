@@ -820,11 +820,11 @@ class GamePageBloc with Disposable {
     var newPhaseNumber = room.phase?.number;
     if (_currentPhaseNumber != newPhaseNumber) {
       String message;
-      if (room.previousPhase?.number == 4)
+      if (room.previousPhase?.number == Phase.Phase4_scores && newPhaseNumber == Phase.Phase1_storytellerSentence)
         message = "Le tour est terminé";
-      else if (newPhaseNumber == 2)
+      else if (newPhaseNumber == Phase.Phase2_cardSelect)
         message = "Le conteur s'est décidé";
-      else if (newPhaseNumber == 3)
+      else if (newPhaseNumber == Phase.Phase3_vote)
         message = "Place au vote";
 
       if (message?.isNotEmpty == true)
