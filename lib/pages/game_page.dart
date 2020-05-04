@@ -485,6 +485,7 @@ class _GameBoardState extends State<GameBoard> {
 
         return Scaffold(
           body: IndexedStack(
+            alignment: Alignment.center,
             children: <Widget>[
 
               // Player Hand
@@ -504,7 +505,7 @@ class _GameBoardState extends State<GameBoard> {
               ),
 
               // Scores
-              Scores(widget.scores),
+              Stats(widget.scores),
 
             ],
             index: _currentTabIndex,
@@ -527,7 +528,7 @@ class _GameBoardState extends State<GameBoard> {
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.show_chart),
-                title: Text('Score'),
+                title: Text('Stats'),
               ),
             ],
             currentIndex: _currentTabIndex,
@@ -848,32 +849,96 @@ class _CardPickerState extends State<CardPicker> {
   }
 }
 
-class Scores extends StatelessWidget {
+class Stats extends StatelessWidget {
   final Map<String, int> scores;    // <playerName, score>
 
-  const Scores(this.scores);
+  const Stats(this.scores);
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: IntrinsicHeight(
-        child: Card(
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              children: scores.entries.map((scoreEntry) => _buildScoreLine(
-                playerName: scoreEntry.key,
-                score: scoreEntry.value,
-              )).toList(growable: false),
+    return Padding(
+      padding: _pageContentPadding,
+      child: Column(
+        children: <Widget>[
+
+          // Room info
+          _buildCard(
+            context: context,
+            title: 'Partie Room',
+            child: Text('r')
+          ),
+
+          // Scores
+          AppResources.SpacerMedium,
+          _buildCard(
+            context: context,
+            title: 'Scores',
+            child: IntrinsicWidth(
+              child: Row(
+                children: () {
+                  // Sort by score
+                  var sortedScores = scores.entries.toList(growable: false)
+                    ..sort((e1, e2) => e2.value.compareTo(e1.value));
+
+                  // Build widgets
+                  return [
+                    _buildScoreColumn(
+                      texts: List.generate(sortedScores.length, (index) => '#${index + 1}'),
+                      bold: true,
+                    ),
+                    AppResources.SpacerSmall,
+                    Flexible(
+                      child: _buildScoreColumn(
+                        texts: sortedScores.map((score) => score.key),
+                      ),
+                    ),
+                   AppResources.SpacerSmall,
+                    _buildScoreColumn(
+                      texts: sortedScores.map((score) => '${score.value} points'),
+                    ),
+                  ];
+                } (),
+              ),
+            )
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCard({ BuildContext context, String title, Widget child }) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              title,
+              style: Theme.of(context).textTheme.subtitle,
             ),
-          )
+            AppResources.SpacerSmall,
+            child,
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildScoreLine({String playerName, int score}) {
-    return Text('$playerName      $score points');
+  Widget _buildScoreColumn({ Iterable<String> texts, bool bold }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: texts.map<Widget>((text) => Text(
+        text,
+        style: bold == true
+          ? TextStyle(
+              fontWeight: FontWeight.bold,
+            )
+          : null,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      )).toList().insertBetween(AppResources.SpacerTiny),
+    );
   }
 }
 
