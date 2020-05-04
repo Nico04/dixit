@@ -14,6 +14,7 @@ class Room {
   Phase phase;
   Phase previousPhase;  // Keep a ref to previous phase when starting a new turn
   int turn;
+  int endScore;   // First player that reach this score will trigger end of game
 
   //TODO use Firestore Timestamp with FieldValue.serverTimestamp(). But it breaks fromJson.
   // see https://stackoverflow.com/questions/60793441/how-do-i-resolve-type-timestamp-is-not-a-subtype-of-type-string-in-type-cast

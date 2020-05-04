@@ -11,6 +11,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blurhash/flutter_blurhash.dart';
+import 'package:flutter_xlider/flutter_xlider.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:provider/provider.dart';
@@ -79,13 +80,13 @@ class GamePage extends StatelessWidget {
                     return WaitingLobby(
                       room.players.keys.toList(growable: false),
                       showStartButton: isHost,
-                      onStartGame: () => bloc.startGame(room),
+                      onStartGame: (endGameScore) => bloc.startGame(room, endGameScore),
                     );
                   }
 
                   // Vars
                   var isStoryteller = player.name == room.phase?.storytellerName;
-                  var phaseNumber = room.phase?.number;
+                  var phaseNumber = room.phase?.number ?? 0;
 
                   bool mustChooseSentence = false;
                   CardPickerSelectCallback onHandCardSelectedCallback;
@@ -128,7 +129,7 @@ class GamePage extends StatelessWidget {
                   }
 
                   // End of game
-                  else if (phaseNumber == null) {
+                  else if (phaseNumber == 0) {
                     instructionsColor = _buildInstructionsColor(false);
                     instructionsText = "Partie terminée !";
                   }
@@ -141,7 +142,7 @@ class GamePage extends StatelessWidget {
                       if (phaseNumber <= Phase.Phase1_storytellerSentence)
                         boardCardToDisplay = room.previousPhase?.playedCards?.values;
 
-                      if (phaseNumber >= Phase.Phase3_vote)
+                      else if (phaseNumber >= Phase.Phase3_vote)
                         boardCardToDisplay = room.phase.playedCards.values;
 
                       return bloc.getCardDataFromIDs(boardCardToDisplay);
@@ -151,10 +152,10 @@ class GamePage extends StatelessWidget {
                     onBoardCardSelected: onBoardCardSelectedCallback,
                     mustChooseSentence: mustChooseSentence,
                     scores: room.players.map((playerName, player) => MapEntry(playerName, player.score)),
-                    boardCardsTextTop: phaseNumber == Phase.Phase1_storytellerSentence
-                      ? room.previousPhase?.playedCards?.map((playerName, cardID) => MapEntry(cardID, playerName))
+                    boardCardsTextTop: phaseNumber <= Phase.Phase1_storytellerSentence
+                      ? room.previousPhase?.playedCards?.map((playerName, cardID) => MapEntry(cardID, playerName == bloc.playerName ? 'Ma carte' : playerName))
                       : null,
-                    boardCardsTextBottom: phaseNumber == Phase.Phase1_storytellerSentence
+                    boardCardsTextBottom: phaseNumber <= Phase.Phase1_storytellerSentence
                       ? room.previousPhase?.votes?.map((cardID, players) => MapEntry(cardID, players.join('\n')))
                       : null,
                   );
@@ -174,6 +175,8 @@ class GamePage extends StatelessWidget {
                       playerName: playerName,
                       storytellerText: () {
                         var storytellerName = displayPreviousPhase ? room.previousPhase.storytellerName : room?.phase?.storytellerName;
+                        if (storytellerName == null)
+                          return null;
                         return storytellerName == playerName
                           ? "Vous êtes le conteur"
                           : "Le conteur est $storytellerName";
@@ -328,12 +331,19 @@ class GameHeader extends StatelessWidget {
   }
 }
 
-class WaitingLobby extends StatelessWidget {
+class WaitingLobby extends StatefulWidget {
   final List<String> playersName;
   final bool showStartButton;
-  final VoidCallback onStartGame;
+  final ValueChanged<int> onStartGame;
 
   const WaitingLobby(this.playersName, {this.showStartButton, this.onStartGame});
+
+  @override
+  _WaitingLobbyState createState() => _WaitingLobbyState();
+}
+
+class _WaitingLobbyState extends State<WaitingLobby> {
+  double _endGameScore = 30;
 
   @override
   Widget build(BuildContext context) {
@@ -346,11 +356,11 @@ class WaitingLobby extends StatelessWidget {
           children: [
 
             // Counter
-            Text(plural(playersName.length, 'joueur')),
+            Text(plural(widget.playersName.length, 'joueur')),
 
             // Players
             AppResources.SpacerMedium,
-            ...playersName.map((p) => Card(
+            ...widget.playersName.map((p) => Card(
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Text(
@@ -359,14 +369,57 @@ class WaitingLobby extends StatelessWidget {
               ),
             )).toList(growable: false),
 
-            // Start button
-            if (showStartButton)
+            // Host controls
+            if (widget.showStartButton)
               ...[
                 Spacer(),
+
+                //
+                Text('Partie en ${_endGameScore.toInt()} points'),
+
+                //
+                FlutterSlider(
+                  values: [_endGameScore],
+                  min: 5,
+                  max: 50,
+                  step: 5,
+                  tooltip: FlutterSliderTooltip(
+                    disabled: true,
+                    format: (value) => '${double.parse(value).toInt()}',    //Doesn't work, see https://github.com/Ali-Azmoud/flutter_xlider/issues/65
+                  ),
+                  onDragging: (handlerIndex, lowerValue, upperValue) {
+                    setState(() {
+                      _endGameScore = lowerValue;
+                    });
+                  },
+                  trackBar: FlutterSliderTrackBar(
+                    activeTrackBar: BoxDecoration(
+                      color: AppResources.ColorSand,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  handler: FlutterSliderHandler(
+                    decoration: BoxDecoration(
+                      color: AppResources.ColorSand,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 2,
+                          spreadRadius: 0.2,
+                          offset: Offset(0, 1)
+                        )
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Start button
+                AppResources.SpacerMedium,
                 AsyncButton(
                   text: 'Commencer',
-                  onPressed: onStartGame,   // TODO min 4 players
-                )
+                  onPressed: () => widget.onStartGame(_endGameScore.toInt()),   // TODO min 4 players
+                ),
               ],
 
           ],
@@ -826,6 +879,8 @@ class GamePageBloc with Disposable {
         message = "Le conteur s'est décidé";
       else if (newPhaseNumber == Phase.Phase3_vote)
         message = "Place au vote";
+      else if (newPhaseNumber == Phase.Phase4_scores)
+        message = "Partie terminée";
 
       if (message?.isNotEmpty == true)
         showMessage(context, message);
@@ -863,10 +918,13 @@ class GamePageBloc with Disposable {
     return drawnCards;
   }
   
-  Future<void> startGame(Room room) async {
+  Future<void> startGame(Room room, int endGameScore) async {
     // Draw card for each player
     for (var player in room.players.values)
       player.cards = _drawCards(room, 6);
+
+    // End score
+    room.endScore = endGameScore;
 
     // First turn
     room.turn = 1;
@@ -978,7 +1036,7 @@ class GamePageBloc with Disposable {
     room.phase = null;
 
     // End game
-    if (room.players.values.any((player) => player.score >= 30)) {
+    if (room.players.values.any((player) => player.score >= room.endScore)) {
       room.endDate = DateTime.now();
     }
 

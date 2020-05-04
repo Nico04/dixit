@@ -41,7 +41,7 @@ class _AnimatedIconHighlightState extends State<AnimatedIconHighlight> with Sing
   void updatePlaying() {
     if (widget.playing != false && !_controller.isAnimating && !_loopHasCompleted) {
       _controller.repeat()
-        .timeout(widget.duration * widget.loops, onTimeout: () {
+        .timeout(widget.duration * widget.loops, onTimeout: () {     //TODO This causes the animation to stop when re-started before timeout expired. See https://github.com/flutter/flutter/issues/53262.
           _controller.reset();
           _loopHasCompleted = true;
         });
