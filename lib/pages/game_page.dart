@@ -52,22 +52,32 @@ class GamePage extends StatelessWidget {
               builder: (context, snapshot) {
                 var room = snapshot.data;
 
+                // If data is not available
+                if (room == null) {
+                  return Scaffold(
+                    body: SafeArea(
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            CircularProgressIndicator(),
+                            AppResources.SpacerMedium,
+                            Text('Synchronisation en cours'),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }
+
                 // Prepare
                 Color instructionsColor;
                 String instructionsText;
+                var phaseNumber = room.phase?.number ?? 0;
+                var displayPhase = room.turn >= 2 && phaseNumber <= Phase.Phase1_storytellerSentence ? room.previousPhase : room.phase;
 
                 // Build content
                 Widget child = () {
-                  // If data is not available
-                  if (room == null) {
-                    instructionsColor = _buildInstructionsColor(false);
-                    instructionsText = 'Synchronisation en cours';
-
-                    return Center(
-                      child: CircularProgressIndicator()
-                    );
-                  }
-
                   // Vars
                   var player = room.players[bloc.playerName];
                   var isHost = player.position == 1;
@@ -86,7 +96,6 @@ class GamePage extends StatelessWidget {
 
                   // Vars
                   var isStoryteller = player.name == room.phase?.storytellerName;
-                  var phaseNumber = room.phase?.number ?? 0;
 
                   bool mustChooseSentence = false;
                   CardPickerSelectCallback onHandCardSelectedCallback;
@@ -134,30 +143,44 @@ class GamePage extends StatelessWidget {
                     instructionsText = "Partie terminée !";
                   }
 
+                  var displayPlayedCards = phaseNumber != Phase.Phase2_cardSelect
+                    ? displayPhase.playedCards
+                    : () {
+                        var playedCard = displayPhase.playedCards.getElement(player.name);
+                        return playedCard != null ? { player.name: playedCard } : null;
+                      } ();
+
                   // Build Game board
                   return GameBoard(
+                    playerName: playerName,
                     playerCards: bloc.getCardDataFromIDs(player.cards),
-                    boardCards: () {
-                      Iterable<int> boardCardToDisplay;
-                      if (phaseNumber <= Phase.Phase1_storytellerSentence)
-                        boardCardToDisplay = room.previousPhase?.playedCards?.values;
+                    boardCards: bloc.getCardDataFromIDs(displayPlayedCards?.values)?.map((card) {
+                      var displayOwner = displayPlayedCards.keyOf(card.id);
+                      if (phaseNumber >= Phase.Phase2_cardSelect && displayOwner != playerName)
+                        displayOwner = null;
 
-                      else if (phaseNumber >= Phase.Phase3_vote)
-                        boardCardToDisplay = room.phase.playedCards.values;
+                      var displayVoters = displayPhase.votes?.getElement(card.id);
+                      if (phaseNumber >= Phase.Phase2_cardSelect) {
+                        if (displayVoters?.contains(playerName) == true)
+                          displayVoters = [playerName];
+                        else
+                          displayVoters = null;
+                      }
 
-                      return bloc.getCardDataFromIDs(boardCardToDisplay);
-                    } (),
-                    playedCardID: room.phase?.playedCards?.getElement(player.name),
+                      return _BoardCardData(
+                        id: card.id,
+                        filename: card.filename,
+                        blurHash: card.blurHash,
+                        owner: displayOwner,
+                        voters: displayVoters,
+                      );
+                    }),
+                    //playedCardID: displayPlayedCards?.getElement(player.name),
+                    storytellerName: displayPhase?.storytellerName,
                     onHandCardSelected: onHandCardSelectedCallback,
                     onBoardCardSelected: onBoardCardSelectedCallback,
                     mustChooseSentence: mustChooseSentence,
                     scores: room.players.map((playerName, player) => MapEntry(playerName, player.score)),
-                    boardCardsTextTop: phaseNumber <= Phase.Phase1_storytellerSentence
-                      ? room.previousPhase?.playedCards?.map((playerName, cardID) => MapEntry(cardID, playerName == bloc.playerName ? 'Ma carte' : playerName))
-                      : null,
-                    boardCardsTextBottom: phaseNumber <= Phase.Phase1_storytellerSentence
-                      ? room.previousPhase?.votes?.map((cardID, players) => MapEntry(cardID, players.join('\n')))
-                      : null,
                   );
 
                 } ();
@@ -174,18 +197,18 @@ class GamePage extends StatelessWidget {
                       roomName: roomName,
                       playerName: playerName,
                       storytellerText: () {
-                        var storytellerName = displayPreviousPhase ? room.previousPhase.storytellerName : room?.phase?.storytellerName;
+                        var storytellerName = displayPhase?.storytellerName;
                         if (storytellerName == null)
                           return null;
                         return storytellerName == playerName
                           ? "Vous êtes le conteur"
                           : "Le conteur est $storytellerName";
                       } (),
-                      sentence: displayPreviousPhase ? room.previousPhase.sentence : room?.phase?.sentence,
+                      sentence: displayPhase?.sentence,
                       instructionsColor: instructionsColor,
                       instructions: instructionsText,
                       turn: room != null ? room.turn - (displayPreviousPhase ? 1 : 0) : null,
-                      phaseNumber: displayPreviousPhase ? room.previousPhase.number : room?.phase?.number,
+                      phaseNumber: displayPhase?.number,
                     ),
 
                     // Content
@@ -431,16 +454,15 @@ class _WaitingLobbyState extends State<WaitingLobby> {
 
 class GameBoard extends StatefulWidget {
   final List<CardData> playerCards;
-  final List<CardData> boardCards;
+  final Iterable<_BoardCardData> boardCards;
   final CardPickerSelectCallback onHandCardSelected;
   final CardPickerSelectCallback onBoardCardSelected;
   final bool mustChooseSentence;
-  final int playedCardID;
+  final String playerName;
+  final String storytellerName;
   final Map<String, int> scores;    // <playerName, score>
-  final Map<int, String> boardCardsTextTop;    // <cardID, text>
-  final Map<int, String> boardCardsTextBottom; // <cardID, text>
 
-  const GameBoard({Key key, this.playerCards, this.boardCards, this.onHandCardSelected, this.onBoardCardSelected, this.mustChooseSentence, this.playedCardID, this.scores, this.boardCardsTextBottom, this.boardCardsTextTop}) : super(key: key);
+  const GameBoard({Key key, this.playerCards, this.boardCards, this.onHandCardSelected, this.onBoardCardSelected, this.mustChooseSentence, this.playerName, this.storytellerName, this.scores}) : super(key: key);
 
   @override
   _GameBoardState createState() => _GameBoardState();
@@ -475,10 +497,10 @@ class _GameBoardState extends State<GameBoard> {
               // Table
               CardsView(
                 cards: widget.boardCards,
-                playerCardID: widget.playedCardID,
+                playerName: widget.playerName,
+                storytellerName: widget.storytellerName,
+                playerCardID: widget.boardCards?.firstWhere((card) => card.owner == widget.playerName, orElse: () => null)?.id,
                 onSelected: widget.onBoardCardSelected,
-                cardsTextTop: widget.boardCardsTextTop,
-                cardsTextBottom: widget.boardCardsTextBottom,
               ),
 
               // Scores
@@ -517,6 +539,7 @@ class _GameBoardState extends State<GameBoard> {
             showUnselectedLabels: false,
             backgroundColor: AppResources.ColorSand,
             selectedItemColor: AppResources.ColorRed,
+            unselectedItemColor: AppResources.ColorDarkGrey,
           ),
         );
       }
@@ -527,14 +550,14 @@ class _GameBoardState extends State<GameBoard> {
 typedef CardPickerSelectCallback = Future<void> Function(int card, String sentence);
 
 class CardsView extends StatelessWidget {
-  final List<CardData> cards;
+  final Iterable<CardData> cards;
+  final String playerName;
+  final String storytellerName;
   final int playerCardID;
   final bool mustSelectSentence;
   final CardPickerSelectCallback onSelected;
-  final Map<int, String> cardsTextTop;   // <cardIndex, text>
-  final Map<int, String> cardsTextBottom;   // <cardIndex, text>
 
-  const CardsView({Key key, this.cards, this.onSelected, this.mustSelectSentence, this.playerCardID, this.cardsTextBottom, this.cardsTextTop}) : super(key: key);
+  const CardsView({Key key, this.cards, this.onSelected, this.mustSelectSentence, this.playerName, this.playerCardID, this.storytellerName}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -551,79 +574,99 @@ class CardsView extends StatelessWidget {
     return GridView.count(
       crossAxisCount: 3,
       childAspectRatio: 1 / 1.5,
-      children: cards.map((card) => _buildCard(
-        card,
-        topText: cardsTextTop?.getElement(card.id),
-        bottomText: cardsTextBottom?.getElement(card.id),
-        onPressed: () => navigateTo(context, () => CardPicker(
-          cards: cards,
-          initialCardID: card.id,
-          playerCardID: playerCardID,
-          mustSelectSentence: mustSelectSentence,
-          onSelected: onSelected,
-        )),
-      )).toList(growable: false),
+      children: cards.map((card) {
+        _BoardCardData boardCard;
+        if (card is _BoardCardData)
+          boardCard = card;
+
+        var isPlayerCard = boardCard?.owner == playerName;
+
+        return Card(
+          margin: EdgeInsets.all(6),
+          elevation: 6,
+          clipBehavior: Clip.antiAlias,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+            side: storytellerName != null && boardCard?.owner == storytellerName
+              ? BorderSide(
+                  color: Colors.greenAccent,
+                  width: 2,
+                )
+              : BorderSide.none,
+          ),
+          child: Stack(
+            children: <Widget>[
+
+              // Image
+              BlurHash(
+                hash: card.blurHash,
+                image: WebServices.getCardUrl(card.filename),
+                duration: Duration(seconds: 1),
+              ),
+
+              // Top Text
+              if (boardCard?.owner?.isNotEmpty == true)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: _buildOverlayZone(
+                    Text(isPlayerCard
+                      ? 'Ma carte'
+                      : boardCard.owner
+                    ),
+                      isPlayerCard
+                      ? AppResources.ColorDarkGrey
+                      : null
+                  )
+                ),
+
+              // Bottom Text
+              if (boardCard?.voters?.isNotEmpty == true)
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: _buildOverlayZone(Wrap(
+                    children: boardCard.voters.map((voter) => TextChip(
+                      voter == playerName ? 'Moi' : voter,
+                      color: voter == playerName
+                        ? AppResources.ColorDarkGrey
+                        : null,
+                    )).toList(growable: false),
+                  ))
+                ),
+
+              // Tap detector
+              Positioned.fill(
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    child: Container(),
+                    onTap: () => navigateTo(context, () => CardPicker(
+                      cards: cards.toList(growable: false),
+                      initialCardID: card.id,
+                      playerCardID: playerCardID,
+                      mustSelectSentence: mustSelectSentence,
+                      onSelected: onSelected,
+                    )),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(growable: false),
       padding: _pageContentPadding,
     );
   }
 
-  Widget _buildCard(CardData card, { String topText, String bottomText, VoidCallback onPressed }) {
-    return Card(
-      margin: EdgeInsets.all(6),
-      elevation: 6,
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Stack(
-        children: <Widget>[
-
-          // Image
-          BlurHash(
-            hash: card.blurHash,
-            image: WebServices.getCardUrl(card.filename),
-            duration: Duration(seconds: 1),
-          ),
-
-          // Top Text
-          if (topText?.isNotEmpty == true)
-            Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: _buildTextZone(topText)
-            ),
-
-          // Bottom Text
-          if (bottomText?.isNotEmpty == true)
-            Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: _buildTextZone(bottomText)
-            ),
-
-          // Tap detector
-          Positioned.fill(
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                child: Container(),
-                onTap: onPressed,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTextZone(String text) {
+  Widget _buildOverlayZone(Widget child, [Color color]) {
     return Container(
-      color: AppResources.ColorSand.withOpacity(0.6),
+      color: (color ?? AppResources.ColorSand).withOpacity(0.6),
       alignment: Alignment.center,
       padding: EdgeInsets.all(5),
-      child: Text(text),
+      child: child,
     );
   }
 }
@@ -685,18 +728,6 @@ class _CardPickerState extends State<CardPicker> {
                   loadingBuilder: (context, event) {
                     return BlurHash(
                       hash: widget.cards[_currentCardIndex].blurHash,
-                    );
-
-                    return Center(
-                      child: Container(
-                        width: 20.0,
-                        height: 20.0,
-                        child: CircularProgressIndicator(
-                          value: event == null
-                            ? 0
-                            : event.cumulativeBytesLoaded / event.expectedTotalBytes,
-                        ),
-                      ),
                     );
                   },
                   backgroundDecoration: const BoxDecoration(
@@ -1068,4 +1099,15 @@ class GamePageBloc with Disposable {
     _roomStreamSubscription.cancel();
     super.dispose();
   }
+}
+
+class _BoardCardData extends CardData {
+  final String owner;
+  final Iterable<String> voters;
+
+  const _BoardCardData({int id, String filename, String blurHash, this.owner, this.voters}) : super(
+    id,
+    filename,
+    blurHash,
+  );
 }

@@ -176,6 +176,9 @@ extension ExtendedMap<K, V> on Map<K, V> {
   ///
   V getElement(K key) => this[key];
 
+  /// Returns the first key of [value], or null
+  K keyOf(V value) => this.entries.firstWhere((entry) => entry.value == value, orElse: () => null)?.key;
+
   /// Return a LinkedHashMap sorted using [compare] function
   LinkedHashMap<K, V> sorted([int compare(MapEntry<K, V> a, MapEntry<K, V> b)]) {
     if (this.length <= 1) return this;
