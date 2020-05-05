@@ -2,6 +2,7 @@ import 'dart:collection';
 import 'dart:math';
 
 import 'package:diacritic/diacritic.dart';
+import 'package:dixit/resources/resources.dart';
 import 'package:flash/flash.dart';
 import 'package:flutter/material.dart';
 
@@ -90,19 +91,29 @@ Future<void> showMessage(BuildContext context, String message, {bool isError, Ob
 /// Ask for user confirmation
 /// Return false if user cancel or dismiss
 /// Return true AFTER calling onUserConfirmed if user said yes
-Future<bool> askUserConfirmation({BuildContext context, String title, String message}) async {
+Future<bool> askUserConfirmation({ BuildContext context, String title, String message, String okText }) async {
   var answer = await showDialog<bool>(
     context: context,
     builder: (context) => AlertDialog(
-      title: Text(title),
+      title: Text(
+        title,
+        style: TextStyle(color: AppResources.ColorRed),
+      ),
+      backgroundColor: AppResources.ColorSand,
       content: Text(message),
       actions: <Widget>[
         FlatButton(
-          child: Text('Annuler'),
+          child: Text(
+            'Annuler',
+            style: TextStyle(color: AppResources.ColorDarkGrey),
+          ),
           onPressed: () => Navigator.of(context).pop(false),
         ),
         FlatButton(
-          child: Text('OK'),
+          child: Text(
+            okText,
+            style: TextStyle(color: AppResources.ColorRed),
+          ),
           onPressed: () => Navigator.of(context).pop(true),
         ),
       ],

@@ -14,10 +14,9 @@ class Phase {
   String sentence;                // Storyteller's sentence
   Map<String, int> playedCards;         // <playerName, cardID> - Order is NOT guaranteed (because of Firestore)
   final Map<int, List<String>> votes;   // <cardID, List<playerName>> - Order is NOT guaranteed (because of Firestore)
+  Map<String, int> scores;    // <playerName, score> : Score for this phase only
 
-  //TODO add Map<String, int> score; // <playerName, score> : Score for this phase only
-
-  Phase(this.storytellerName, {int number, this.sentence, Map<String, int> playedCards, Map<int, List<String>> votes}) :
+  Phase(this.storytellerName, { int number, this.sentence, Map<String, int> playedCards, Map<int, List<String>> votes, this.scores }) :
     this.number = number ?? 1,
     this.playedCards = playedCards ?? Map<String, int>(),
     this.votes = votes ?? Map<int, List<String>>();

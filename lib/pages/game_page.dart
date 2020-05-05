@@ -30,7 +30,8 @@ class GamePage extends StatelessWidget {
   static Future<bool> askExit(BuildContext context) async => await askUserConfirmation(
     context: context,
     title: 'Quitter la partie',
-    message: 'Êtes-vous sûr de vouloir quitter la partie en cours ?'
+    message: 'Êtes-vous sûr de vouloir quitter la partie en cours ?',
+    okText: 'Quitter',
   );
 
   @override
@@ -152,7 +153,6 @@ class GamePage extends StatelessWidget {
 
                   // Build Game board
                   return GameBoard(
-                    playerName: playerName,
                     playerCards: bloc.getCardDataFromIDs(player.cards),
                     boardCards: bloc.getCardDataFromIDs(displayPlayedCards?.values)?.map((card) {
                       var displayOwner = displayPlayedCards.keyOf(card.id);
@@ -180,7 +180,6 @@ class GamePage extends StatelessWidget {
                     onHandCardSelected: onHandCardSelectedCallback,
                     onBoardCardSelected: onBoardCardSelectedCallback,
                     mustChooseSentence: mustChooseSentence,
-                    scores: room.players.map((playerName, player) => MapEntry(playerName, player.score)),
                   );
 
                 } ();
@@ -213,7 +212,10 @@ class GamePage extends StatelessWidget {
 
                     // Content
                     Expanded(
-                      child: child,
+                      child: Provider.value(
+                        value: room,
+                        child: child,
+                      ),
                     ),
 
                   ],
@@ -458,11 +460,9 @@ class GameBoard extends StatefulWidget {
   final CardPickerSelectCallback onHandCardSelected;
   final CardPickerSelectCallback onBoardCardSelected;
   final bool mustChooseSentence;
-  final String playerName;
   final String storytellerName;
-  final Map<String, int> scores;    // <playerName, score>
 
-  const GameBoard({Key key, this.playerCards, this.boardCards, this.onHandCardSelected, this.onBoardCardSelected, this.mustChooseSentence, this.playerName, this.storytellerName, this.scores}) : super(key: key);
+  const GameBoard({Key key, this.playerCards, this.boardCards, this.onHandCardSelected, this.onBoardCardSelected, this.mustChooseSentence, this.storytellerName}) : super(key: key);
 
   @override
   _GameBoardState createState() => _GameBoardState();
@@ -498,14 +498,13 @@ class _GameBoardState extends State<GameBoard> {
               // Table
               CardsView(
                 cards: widget.boardCards,
-                playerName: widget.playerName,
                 storytellerName: widget.storytellerName,
-                playerCardID: widget.boardCards?.firstWhere((card) => card.owner == widget.playerName, orElse: () => null)?.id,
+                playerCardID: widget.boardCards?.firstWhere((card) => card.owner == bloc.playerName, orElse: () => null)?.id,
                 onSelected: widget.onBoardCardSelected,
               ),
 
               // Scores
-              Stats(widget.scores),
+              Stats(),
 
             ],
             index: _currentTabIndex,
@@ -552,113 +551,116 @@ typedef CardPickerSelectCallback = Future<void> Function(int card, String senten
 
 class CardsView extends StatelessWidget {
   final Iterable<CardData> cards;
-  final String playerName;
   final String storytellerName;
   final int playerCardID;
   final bool mustSelectSentence;
   final CardPickerSelectCallback onSelected;
 
-  const CardsView({Key key, this.cards, this.onSelected, this.mustSelectSentence, this.playerName, this.playerCardID, this.storytellerName}) : super(key: key);
+  const CardsView({Key key, this.cards, this.onSelected, this.mustSelectSentence, this.playerCardID, this.storytellerName}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // If there is no cards
-    if (cards?.isNotEmpty != true)
-      return Center(
-        child: Icon(
-          Icons.remove_circle_outline,
-          size: 40,
-        ),
-      );
+    return Consumer<GamePageBloc>(
+      builder: (context, bloc, _) {
+        // If there is no cards
+        if (cards?.isNotEmpty != true)
+          return Center(
+            child: Icon(
+              Icons.remove_circle_outline,
+              size: 40,
+            ),
+          );
 
-    // If there is at least one card
-    return GridView.count(
-      crossAxisCount: 3,
-      childAspectRatio: 1 / 1.5,
-      children: cards.map((card) {
-        _BoardCardData boardCard;
-        if (card is _BoardCardData)
-          boardCard = card;
+        // If there is at least one card
+        return GridView.count(
+          crossAxisCount: 3,
+          childAspectRatio: 1 / 1.5,
+          children: cards.map((card) {
+            _BoardCardData boardCard;
+            if (card is _BoardCardData)
+              boardCard = card;
 
-        var isPlayerCard = boardCard?.owner == playerName;
+            var isPlayerCard = boardCard?.owner == bloc.playerName;
 
-        return Card(
-          margin: EdgeInsets.all(6),
-          elevation: 6,
-          clipBehavior: Clip.antiAlias,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-            side: storytellerName != null && boardCard?.owner == storytellerName
-              ? BorderSide(
-                  color: Colors.greenAccent,
-                  width: 2,
-                )
-              : BorderSide.none,
-          ),
-          child: Stack(
-            children: <Widget>[
-
-              // Image
-              BlurHash(
-                hash: card.blurHash,
-                image: WebServices.getCardUrl(card.filename),
-                duration: Duration(seconds: 1),
-              ),
-
-              // Top Text
-              if (boardCard?.owner?.isNotEmpty == true)
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: _buildOverlayZone(
-                    Text(isPlayerCard
-                      ? 'Ma carte'
-                      : boardCard.owner
-                    ),
-                      isPlayerCard
-                      ? AppResources.ColorDarkGrey
-                      : null
+            return Card(
+              margin: EdgeInsets.all(6),
+              elevation: 6,
+              clipBehavior: Clip.antiAlias,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+                side: storytellerName != null && boardCard?.owner == storytellerName
+                  ? BorderSide(
+                    color: Colors.greenAccent,
+                    width: 2,
                   )
-                ),
-
-              // Bottom Text
-              if (boardCard?.voters?.isNotEmpty == true)
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: _buildOverlayZone(Wrap(
-                    children: boardCard.voters.map((voter) => TextChip(
-                      voter == playerName ? 'Moi' : voter,
-                      color: voter == playerName
-                        ? AppResources.ColorDarkGrey
-                        : null,
-                    )).toList(growable: false),
-                  ))
-                ),
-
-              // Tap detector
-              Positioned.fill(
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    child: Container(),
-                    onTap: () => navigateTo(context, () => CardPicker(
-                      cards: cards.toList(growable: false),
-                      initialCardID: card.id,
-                      playerCardID: playerCardID,
-                      mustSelectSentence: mustSelectSentence,
-                      onSelected: onSelected,
-                    )),
-                  ),
-                ),
+                  : BorderSide.none,
               ),
-            ],
-          ),
+              child: Stack(
+                children: <Widget>[
+
+                  // Image
+                  BlurHash(
+                    hash: card.blurHash,
+                    image: WebServices.getCardUrl(card.filename),
+                    duration: Duration(seconds: 1),
+                  ),
+
+                  // Top Text
+                  if (boardCard?.owner?.isNotEmpty == true)
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: _buildOverlayZone(
+                        Text(isPlayerCard
+                          ? 'Ma carte'
+                          : boardCard.owner
+                        ),
+                        isPlayerCard
+                          ? AppResources.ColorDarkGrey
+                          : null
+                      )
+                    ),
+
+                  // Bottom Text
+                  if (boardCard?.voters?.isNotEmpty == true)
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: _buildOverlayZone(Wrap(
+                        children: boardCard.voters.map((voter) => TextChip(
+                          voter == bloc.playerName ? 'Moi' : voter,
+                          color: voter == bloc.playerName
+                            ? AppResources.ColorDarkGrey
+                            : null,
+                        )).toList(growable: false),
+                      ))
+                    ),
+
+                  // Tap detector
+                  Positioned.fill(
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        child: Container(),
+                        onTap: () => navigateTo(context, () => CardPicker(
+                          cards: cards.toList(growable: false),
+                          initialCardID: card.id,
+                          playerCardID: playerCardID,
+                          mustSelectSentence: mustSelectSentence,
+                          onSelected: onSelected,
+                        )),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(growable: false),
+          padding: _pageContentPadding,
         );
-      }).toList(growable: false),
-      padding: _pageContentPadding,
+      }
     );
   }
 
@@ -850,59 +852,81 @@ class _CardPickerState extends State<CardPicker> {
 }
 
 class Stats extends StatelessWidget {
-  final Map<String, int> scores;    // <playerName, score>
-
-  const Stats(this.scores);
-
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: _pageContentPadding,
-      child: Column(
-        children: <Widget>[
+    return Consumer<GamePageBloc>(
+      builder: (context, bloc, _) {
+        return Consumer<Room>(
+          builder: (context, room, _) {
+            return Padding(
+              padding: _pageContentPadding,
+              child: Column(
+                children: <Widget>[
 
-          // Room info
-          _buildCard(
-            context: context,
-            title: 'Partie Room',
-            child: Text('r')
-          ),
-
-          // Scores
-          AppResources.SpacerMedium,
-          _buildCard(
-            context: context,
-            title: 'Scores',
-            child: IntrinsicWidth(
-              child: Row(
-                children: () {
-                  // Sort by score
-                  var sortedScores = scores.entries.toList(growable: false)
-                    ..sort((e1, e2) => e2.value.compareTo(e1.value));
-
-                  // Build widgets
-                  return [
-                    _buildScoreColumn(
-                      texts: List.generate(sortedScores.length, (index) => '#${index + 1}'),
-                      bold: true,
+                  // Room info
+                  _buildCard(
+                    context: context,
+                    title: room.name,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(bloc.playerName),
+                        Text('Tour ${room.turn}'),
+                        Text('Partie en ${room.endScore} points'),
+                        Text('${room.players.length} joueurs'),
+                        Text("${room.drawnCards.length} cartes piochées"),
+                        Text('Commencé le ${AppResources.formatterFriendlyDate.format(room.startDate)}'),
+                        if (room.endDate != null)
+                          Text('Terminé le ${AppResources.formatterFriendlyDate.format(room.endDate)}'),
+                      ],
                     ),
-                    AppResources.SpacerSmall,
-                    Flexible(
-                      child: _buildScoreColumn(
-                        texts: sortedScores.map((score) => score.key),
+                  ),
+
+                  // Previous phase info
+                  if (room.previousPhase != null)
+                  ...[
+                    AppResources.SpacerMedium,
+                    _buildCard(
+                      context: context,
+                      title: 'Tour précédent',
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text('Le conteur était ${room.previousPhase.storytellerName}'),
+                          Text('La phrase était ${room.previousPhase.sentence}'),
+                          _buildScores(room.previousPhase.scores),
+                        ],
                       ),
                     ),
-                   AppResources.SpacerSmall,
-                    _buildScoreColumn(
-                      texts: sortedScores.map((score) => '${score.value} points'),
+                  ],
+
+                  // Scores
+                  AppResources.SpacerMedium,
+                  _buildCard(
+                    context: context,
+                    title: 'Scores',
+                    child: _buildScores(
+                      room.players.map((playerName, player) => MapEntry(playerName, player.score))
                     ),
-                  ];
-                } (),
+                  ),
+
+                  // Exit button
+                  Spacer(),
+                  AppResources.SpacerMedium,
+                  AsyncButton(
+                    text: 'Quitter la partie',
+                    onPressed: () async {
+                      if (await GamePage.askExit(context))
+                        Navigator.of(context).pop();
+                    },
+                  ),
+
+                ],
               ),
-            )
-          ),
-        ],
-      ),
+            );
+          }
+        );
+      }
     );
   }
 
@@ -921,6 +945,36 @@ class Stats extends StatelessWidget {
             child,
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildScores(Map<String, int> scores) {
+    return IntrinsicWidth(
+      child: Row(
+        children: () {
+          // Sort by score
+          var sortedScores = scores.entries.toList(growable: false)
+            ..sort((e1, e2) => e2.value.compareTo(e1.value));
+
+          // Build widgets
+          return [
+            _buildScoreColumn(
+              texts: List.generate(sortedScores.length, (index) => '#${index + 1}'),
+              bold: true,
+            ),
+            AppResources.SpacerSmall,
+            Flexible(
+              child: _buildScoreColumn(
+                texts: sortedScores.map((score) => score.key),
+              ),
+            ),
+            AppResources.SpacerSmall,
+            _buildScoreColumn(
+              texts: sortedScores.map((score) => '${score.value} points'),
+            ),
+          ];
+        } (),
       ),
     );
   }
@@ -1082,46 +1136,52 @@ class GamePageBloc with Disposable {
   Future<void> _toScoresPhase(Room room) async {
     // ---- Count score ----
     var storytellerName = room.phase.storytellerName;
-    var storytellerCardID = room.phase.playedCards[storytellerName];
     var votes = room.phase.votes;
-    var getCardOwner = (int cardID) => room.players[room.phase.playedCards.entries.firstWhere((entry) => entry.value == cardID).key];
+    var getCardOwnerName = (int cardID) => room.phase.playedCards.keyOf(cardID);
+
+    // Init this phase's scores
+    var scores = room.phase.scores = room.players.map((playerName, _) => MapEntry(playerName, 0));
 
     // If none or all player(s) voted for the storyteller's card
+    var storytellerCardID = room.phase.playedCards[storytellerName];
     var storytellerCardVotes = votes[storytellerCardID]?.length ?? 0;
     if (storytellerCardVotes == 0 || storytellerCardVotes == room.players.length - 1) {
       // Give 2 points for each players except main player
-      for (var player in room.players.values) {
-        if (player.name != storytellerName)
-          player.score += 2;
+      for (var playerName in scores.keys) {
+        if (playerName != storytellerName)
+          scores[playerName] += 2;
       }
 
       // Give 1 point to the owner of the card voted by the storyteller
       var storytellerVotedCardID = votes.entries.firstWhere((entry) => entry.value.contains(storytellerName)).key;
-      getCardOwner(storytellerVotedCardID).score += 1;
+      scores[getCardOwnerName(storytellerVotedCardID)] += 1;
     }
 
     // If not
     else {
       // For each card vote
       for (var voteEntry in votes.entries) {
-        var cardOwner = getCardOwner(voteEntry.key);
+        var cardOwnerName = getCardOwnerName(voteEntry.key);
 
         // If it's the storyteller's card
-        if (cardOwner.name == storytellerName) {
+        if (cardOwnerName == storytellerName) {
           // Give 3 points for each player who has voted for the storyteller's card
-          voteEntry.value.forEach((playerName) => room.players[playerName].score += 3);
+          voteEntry.value.forEach((playerName) => scores[playerName] += 3);
 
           // Give 3 point for the storyteller
-          cardOwner.score += 3;
+          scores[storytellerName] += 3;
         }
 
         // If not
         else {
           // Give 1 point per voter to the owner
-          voteEntry.value.forEach((playerName) => cardOwner.score += 1);
+          voteEntry.value.forEach((playerName) => scores[cardOwnerName] += 1);
         }
       }
     }
+
+    // Sum phase's scores to players's score
+    room.players.forEach((playerName, player) => player.score += scores[playerName]);
 
     // ---- Apply new phase data -----
     // Phase number

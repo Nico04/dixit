@@ -1,6 +1,8 @@
 import 'package:device_id/device_id.dart';
 import 'package:dixit/resources/resources.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
 
 import 'pages/_pages.dart';
 import 'services/storage_service.dart';
@@ -10,6 +12,10 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await StorageService.init();
   App.deviceID = await DeviceId.getID;
+
+  // Init localisation formatter
+  Intl.defaultLocale = 'fr';
+  initializeDateFormatting();
 
   // Start app
   runApp(App());

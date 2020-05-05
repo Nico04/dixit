@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class AppResources {
   // Color
@@ -19,4 +20,7 @@ class AppResources {
 
   // Validator
   static final validatorNotEmpty = (String value) => value?.isNotEmpty != true ? "Obligatoire" : null;
+
+  //Formatter
+  static final formatterFriendlyDate = DateFormat("d MMM yyyy 'à' HH'h'mm");
 }
