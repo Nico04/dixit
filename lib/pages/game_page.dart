@@ -316,28 +316,6 @@ class GameHeader extends StatelessWidget {
                     ),
                   ),
                 ),
-
-                // Actions
-                PopupMenuButton<int>(
-                  itemBuilder: (BuildContext context) => [
-                    PopupMenuItem<int>(
-                      value: 0,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          Icon(Icons.exit_to_app),
-                          AppResources.SpacerTiny,
-                          Text('Quitter la partie'),
-                        ],
-                      ),
-                    ),
-                  ],
-                  onSelected: (index) async {
-                    if (await GamePage.askExit(context))
-                      Navigator.of(context).pop();
-                  },
-                ),
-
               ],
             ),
 
@@ -858,71 +836,83 @@ class Stats extends StatelessWidget {
       builder: (context, bloc, _) {
         return Consumer<Room>(
           builder: (context, room, _) {
-            return Padding(
-              padding: _pageContentPadding,
-              child: Column(
-                children: <Widget>[
+            return Stack(
+              fit: StackFit.expand,
+              children: <Widget>[
 
-                  // Room info
-                  _buildCard(
-                    context: context,
-                    title: room.name,
+                // Content
+                SingleChildScrollView(
+                  child: Padding(
+                    padding: _pageContentPadding,
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        Text(bloc.playerName),
-                        Text('Tour ${room.turn}'),
-                        Text('Partie en ${room.endScore} points'),
-                        Text('${room.players.length} joueurs'),
-                        Text("${room.drawnCards.length} cartes piochées"),
-                        Text('Commencé le ${AppResources.formatterFriendlyDate.format(room.startDate)}'),
-                        if (room.endDate != null)
-                          Text('Terminé le ${AppResources.formatterFriendlyDate.format(room.endDate)}'),
+
+                        // Room info
+                        _buildCard(
+                          context: context,
+                          title: room.name,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Text(bloc.playerName),
+                              Text('Tour ${room.turn}'),
+                              Text('Partie en ${room.endScore} points'),
+                              Text('${room.players.length} joueurs'),
+                              Text("${room.drawnCards.length} cartes piochées"),
+                              Text('Commencé le ${AppResources.formatterFriendlyDate.format(room.startDate)}'),
+                              if (room.endDate != null)
+                                Text('Terminé le ${AppResources.formatterFriendlyDate.format(room.endDate)}'),
+                            ],
+                          ),
+                        ),
+
+                        // Previous phase info
+                        if (room.previousPhase != null)
+                        ...[
+                          AppResources.SpacerMedium,
+                          _buildCard(
+                            context: context,
+                            title: 'Tour précédent',
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                Text('Le conteur était ${room.previousPhase.storytellerName}'),
+                                Text('La phrase était ${room.previousPhase.sentence}'),
+                                _buildScores(room.previousPhase.scores),
+                              ],
+                            ),
+                          ),
+                        ],
+
+                        // Scores
+                        AppResources.SpacerMedium,
+                        _buildCard(
+                          context: context,
+                          title: 'Scores',
+                          child: _buildScores(
+                            room.players.map((playerName, player) => MapEntry(playerName, player.score))
+                          ),
+                        ),
+
                       ],
                     ),
                   ),
+                ),
 
-                  // Previous phase info
-                  if (room.previousPhase != null)
-                  ...[
-                    AppResources.SpacerMedium,
-                    _buildCard(
-                      context: context,
-                      title: 'Tour précédent',
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Text('Le conteur était ${room.previousPhase.storytellerName}'),
-                          Text('La phrase était ${room.previousPhase.sentence}'),
-                          _buildScores(room.previousPhase.scores),
-                        ],
-                      ),
-                    ),
-                  ],
-
-                  // Scores
-                  AppResources.SpacerMedium,
-                  _buildCard(
-                    context: context,
-                    title: 'Scores',
-                    child: _buildScores(
-                      room.players.map((playerName, player) => MapEntry(playerName, player.score))
-                    ),
-                  ),
-
-                  // Exit button
-                  Spacer(),
-                  AppResources.SpacerMedium,
-                  AsyncButton(
+                // Exit button
+                Positioned(
+                  bottom: 10,
+                  right: 10,
+                  child: AsyncButton(
                     text: 'Quitter la partie',
                     onPressed: () async {
                       if (await GamePage.askExit(context))
                         Navigator.of(context).pop();
                     },
                   ),
+                ),
 
-                ],
-              ),
+              ],
             );
           }
         );
