@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "241560082662",
+    "firebase_url": "https://dixit-flutter.firebaseio.com",
+    "project_id": "dixit-flutter",
+    "storage_bucket": "dixit-flutter.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:241560082662:android:be09e3254f34940510c327",
+        "android_client_info": {
+          "package_name": "fr.icysun.dixit"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "241560082662-9mgg6oidbin6aarv02usp9mjou6f9onv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAb7Zz1_CjNYtM6uIH86AMNCvXigpQgSZE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "241560082662-9mgg6oidbin6aarv02usp9mjou6f9onv.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

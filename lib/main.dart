@@ -1,5 +1,6 @@
 import 'package:device_id/device_id.dart';
 import 'package:dixit/resources/resources.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
@@ -11,7 +12,10 @@ void main() async {
   // Init
   WidgetsFlutterBinding.ensureInitialized();
   await StorageService.init();
-  App.deviceID = await DeviceId.getID;
+
+  // Get device ID
+  if (!kIsWeb)    //DeviceId plugin never returns on web. See https://github.com/TheDOme6/device_id/issues/20
+    App.deviceID = await DeviceId.getID;
 
   // Init localisation formatter
   Intl.defaultLocale = 'fr';
