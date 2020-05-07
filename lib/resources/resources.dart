@@ -3,10 +3,12 @@ import 'package:intl/intl.dart';
 
 class AppResources {
   // Color
-  static const ColorOrange = Color(0xFFF58726);
-  static const ColorRed = Color(0xFF942B28);
   static const ColorSand = Color(0xFFF0DCA1);
+  static const ColorDarkSand = Color(0xFFE0B255);
+  static const ColorOrange = Color(0xFFE29644);
+  static const ColorRed = Color(0xFF942B28);
   static const ColorDarkGrey = Color(0xFF6E654A);
+  static const ColorGreen = Color(0xFF4EA8B2);
 
   // Spacer
   static const SpacerLarge = SizedBox(width: 20, height: 20);

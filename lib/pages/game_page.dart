@@ -228,7 +228,7 @@ class GamePage extends StatelessWidget {
     );
   }
 
-  Color _buildInstructionsColor(bool hasTodo) => hasTodo == true ? Colors.greenAccent : Colors.grey;
+  Color _buildInstructionsColor(bool hasTodo) => hasTodo == true ? AppResources.ColorGreen : AppResources.ColorDarkSand;
 
   String _buildWaitText(Iterable<String> waitedPlayersNames) {
     String text;
@@ -261,7 +261,7 @@ class GameHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       elevation: 5,     // TODO doesn't work
-      color: AppResources.ColorSand,
+      color: AppResources.ColorOrange,
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -277,21 +277,6 @@ class GameHeader extends StatelessWidget {
                     padding: const EdgeInsets.all(8.0),
                     child: Column(
                       children: <Widget>[
-
-                        // Information
-                        Row(
-                          children: <Widget>[
-
-                            // Player and room's names
-                            Text('$playerName @ $roomName'),
-
-                            // Game info
-                            Spacer(),
-                            if (turn != null && turn > 0)
-                              Text('Tour $turn, Phase $phaseNumber'),   // TODO at the end of the game, phaseNumber is null. Maybe just remove phase number from header ?
-
-                          ],
-                        ),
 
                         // Storyteller name
                         if (storytellerText?.isNotEmpty == true)
@@ -325,7 +310,9 @@ class GameHeader extends StatelessWidget {
               color: instructionsColor,
               padding: const EdgeInsets.all(8),
               alignment: Alignment.center,
-              child: Text(instructions),
+              child: Text(
+                instructions,
+              ),
             ),
           ],
         ),
@@ -515,7 +502,7 @@ class _GameBoardState extends State<GameBoard> {
               });
             },
             showUnselectedLabels: false,
-            backgroundColor: AppResources.ColorSand,
+            backgroundColor: AppResources.ColorOrange,
             selectedItemColor: AppResources.ColorRed,
             unselectedItemColor: AppResources.ColorDarkGrey,
           ),
@@ -566,12 +553,19 @@ class CardsView extends StatelessWidget {
               clipBehavior: Clip.antiAlias,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
-                side: storytellerName != null && boardCard?.owner == storytellerName
-                  ? BorderSide(
-                    color: Colors.greenAccent,
-                    width: 2,
-                  )
-                  : BorderSide.none,
+                side: () {
+                  if (storytellerName != null && boardCard?.owner == storytellerName)
+                    return BorderSide(
+                      color: AppResources.ColorOrange,
+                      width: 2.5,
+                    );
+                  if (boardCard?.owner == bloc.playerName)
+                    return BorderSide(
+                      color: AppResources.ColorGreen,
+                      width: 2.5,
+                    );
+                  return BorderSide.none;
+                } (),
               ),
               child: Stack(
                 children: <Widget>[
@@ -592,11 +586,9 @@ class CardsView extends StatelessWidget {
                       child: _buildOverlayZone(
                         Text(isPlayerCard
                           ? 'Ma carte'
-                          : boardCard.owner
+                          : boardCard.owner,
+                          style: TextStyle(color: Colors.white),
                         ),
-                        isPlayerCard
-                          ? AppResources.ColorDarkGrey
-                          : null
                       )
                     ),
 
@@ -607,11 +599,14 @@ class CardsView extends StatelessWidget {
                       left: 0,
                       right: 0,
                       child: _buildOverlayZone(Wrap(
-                        children: boardCard.voters.map((voter) => TextChip(
-                          voter == bloc.playerName ? 'Moi' : voter,
-                          color: voter == bloc.playerName
-                            ? AppResources.ColorDarkGrey
-                            : null,
+                        children: boardCard.voters.map((voter) => Padding(
+                          padding: const EdgeInsets.all(2),
+                          child: TextChip(
+                            voter == bloc.playerName ? 'Moi' : voter,
+                            color: voter == bloc.playerName
+                              ? AppResources.ColorGreen
+                              : AppResources.ColorDarkSand,
+                          ),
                         )).toList(growable: false),
                       ))
                     ),
@@ -642,9 +637,9 @@ class CardsView extends StatelessWidget {
     );
   }
 
-  Widget _buildOverlayZone(Widget child, [Color color]) {
+  Widget _buildOverlayZone(Widget child) {
     return Container(
-      color: (color ?? AppResources.ColorSand).withOpacity(0.6),
+      color: AppResources.ColorDarkGrey.withOpacity(0.6),
       alignment: Alignment.center,
       padding: EdgeInsets.all(5),
       child: child,
@@ -700,8 +695,8 @@ class _CardPickerState extends State<CardPicker> {
                     return PhotoViewGalleryPageOptions(
                       key: ValueKey(card.id),
                       imageProvider: NetworkImage(WebServices.getCardUrl(card.filename)),
-                      initialScale: PhotoViewComputedScale.contained * 0.8,
-                      minScale: PhotoViewComputedScale.contained * 0.5,
+                      initialScale: PhotoViewComputedScale.contained,
+                      minScale: PhotoViewComputedScale.contained,
                       maxScale: PhotoViewComputedScale.contained * 1.5,
                       //heroAttributes: HeroAttributes(tag: galleryItems[index].id),
                     );
@@ -712,7 +707,7 @@ class _CardPickerState extends State<CardPicker> {
                     );
                   },
                   backgroundDecoration: const BoxDecoration(
-                    color: Colors.white,
+                    color: AppResources.ColorSand,
                   ),
                   onPageChanged: (index) {
                     setState(() {
@@ -836,83 +831,101 @@ class Stats extends StatelessWidget {
       builder: (context, bloc, _) {
         return Consumer<Room>(
           builder: (context, room, _) {
-            return Stack(
-              fit: StackFit.expand,
-              children: <Widget>[
+            return SingleChildScrollView(
+              child: Padding(
+                padding: _pageContentPadding,
+                child: Column(
+                  children: <Widget>[
 
-                // Content
-                SingleChildScrollView(
-                  child: Padding(
-                    padding: _pageContentPadding,
-                    child: Column(
-                      children: <Widget>[
+                    // Scores
+                    _buildCard(
+                      context: context,
+                      icon: Icons.stars,
+                      title: 'Scores',
+                      child: _buildScores(
+                          room.players.map((playerName, player) => MapEntry(playerName, player.score))
+                      ),
+                    ),
 
-                        // Room info
-                        _buildCard(
-                          context: context,
-                          title: room.name,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              Text(bloc.playerName),
-                              Text('Tour ${room.turn}'),
-                              Text('Partie en ${room.endScore} points'),
-                              Text('${room.players.length} joueurs'),
-                              Text("${room.drawnCards.length} cartes piochées"),
-                              Text('Commencé le ${AppResources.formatterFriendlyDate.format(room.startDate)}'),
-                              if (room.endDate != null)
-                                Text('Terminé le ${AppResources.formatterFriendlyDate.format(room.endDate)}'),
-                            ],
-                          ),
-                        ),
-
-                        // Previous phase info
-                        if (room.previousPhase != null)
-                        ...[
-                          AppResources.SpacerMedium,
-                          _buildCard(
-                            context: context,
-                            title: 'Tour précédent',
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                    // Previous phase info
+                    if (room.previousPhase != null)
+                    ...[
+                      AppResources.SpacerMedium,
+                      _buildCard(
+                        context: context,
+                        icon: Icons.undo,
+                        title: 'Tour précédent',
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: <Widget>[
-                                Text('Le conteur était ${room.previousPhase.storytellerName}'),
-                                Text('La phrase était ${room.previousPhase.sentence}'),
-                                _buildScores(room.previousPhase.scores),
+                                Text('Le conteur était '),
+                                Text(
+                                  room.previousPhase.storytellerName,
+                                  style: TextStyle(fontStyle: FontStyle.italic),
+                                ),
                               ],
                             ),
-                          ),
-                        ],
-
-                        // Scores
-                        AppResources.SpacerMedium,
-                        _buildCard(
-                          context: context,
-                          title: 'Scores',
-                          child: _buildScores(
-                            room.players.map((playerName, player) => MapEntry(playerName, player.score))
-                          ),
+                            AppResources.SpacerTiny,
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                Text('La phrase était '),
+                                Text(
+                                  room.previousPhase.sentence,
+                                  style: TextStyle(fontStyle: FontStyle.italic),
+                                ),
+                              ],
+                            ),
+                            AppResources.SpacerSmall,
+                            _buildScores(
+                              room.previousPhase.scores,
+                              delta: true
+                            ),
+                          ],
                         ),
+                      ),
+                    ],
 
-                      ],
+                    // Room info
+                    AppResources.SpacerMedium,
+                    _buildCard(
+                      context: context,
+                      icon: Icons.info,
+                      title: room.name,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(bloc.playerName),
+                          Text('Tour ${room.turn}'),
+                          Text('Partie en ${room.endScore} points'),
+                          Text('${room.players.length} joueurs'),
+                          Text("${room.drawnCards.length} cartes piochées"),
+                          Text('Commencé le ${AppResources.formatterFriendlyDate.format(room.startDate)}'),
+                          if (room.endDate != null)
+                            Text('Terminé le ${AppResources.formatterFriendlyDate.format(room.endDate)}'),
+                        ],
+                      ),
                     ),
-                  ),
-                ),
 
-                // Exit button
-                Positioned(
-                  bottom: 10,
-                  right: 10,
-                  child: AsyncButton(
-                    text: 'Quitter la partie',
-                    onPressed: () async {
-                      if (await GamePage.askExit(context))
-                        Navigator.of(context).pop();
-                    },
-                  ),
-                ),
+                    // Exit button
+                    AppResources.SpacerMedium,
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: AsyncButton(
+                        text: 'Quitter la partie',
+                        onPressed: () async {
+                          if (await GamePage.askExit(context))
+                            Navigator.of(context).pop();
+                        },
+                      ),
+                    ),
 
-              ],
+                  ],
+                ),
+              ),
             );
           }
         );
@@ -920,16 +933,30 @@ class Stats extends StatelessWidget {
     );
   }
 
-  Widget _buildCard({ BuildContext context, String title, Widget child }) {
+  Widget _buildCard({ BuildContext context, IconData icon, String title, Widget child }) {
     return Card(
+      elevation: 6,
       child: Padding(
         padding: const EdgeInsets.all(10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text(
-              title,
-              style: Theme.of(context).textTheme.subtitle,
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                if (icon != null)
+                  ...[
+                    Icon(
+                      icon,
+                      size: 15,
+                    ),
+                    AppResources.SpacerTiny,
+                  ],
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.subtitle2,
+                ),
+              ],
             ),
             AppResources.SpacerSmall,
             child,
@@ -939,7 +966,7 @@ class Stats extends StatelessWidget {
     );
   }
 
-  Widget _buildScores(Map<String, int> scores) {
+  Widget _buildScores(Map<String, int> scores, { bool delta }) {
     return IntrinsicWidth(
       child: Row(
         children: () {
@@ -949,11 +976,14 @@ class Stats extends StatelessWidget {
 
           // Build widgets
           return [
-            _buildScoreColumn(
-              texts: List.generate(sortedScores.length, (index) => '#${index + 1}'),
-              bold: true,
-            ),
-            AppResources.SpacerSmall,
+            if (delta != true)
+              ...[
+                _buildScoreColumn(
+                  texts: List.generate(sortedScores.length, (index) => '#${index + 1}'),
+                  bold: true,
+                ),
+                AppResources.SpacerSmall,
+              ],
             Flexible(
               child: _buildScoreColumn(
                 texts: sortedScores.map((score) => score.key),
@@ -961,7 +991,7 @@ class Stats extends StatelessWidget {
             ),
             AppResources.SpacerSmall,
             _buildScoreColumn(
-              texts: sortedScores.map((score) => '${score.value} points'),
+              texts: sortedScores.map((score) => (delta == true ? '+' : '') + '${score.value} points'),
             ),
           ];
         } (),

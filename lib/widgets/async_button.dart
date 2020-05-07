@@ -15,7 +15,7 @@ class AsyncButton extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(5),
       ),
-      color: AppResources.ColorSand,
+      color: AppResources.ColorDarkSand,
       child: AnimatedCrossFade(
         duration: AppResources.DurationAnimationMedium,   //Duration(seconds: 3), //
         firstChild: Text(

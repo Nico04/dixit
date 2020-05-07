@@ -1,4 +1,3 @@
-import 'package:dixit/resources/resources.dart';
 import 'package:flutter/material.dart';
 
 class TextChip extends StatelessWidget {
@@ -14,10 +13,12 @@ class TextChip extends StatelessWidget {
         shape: StadiumBorder(
           side: BorderSide.none,
         ),
-        color: color ?? AppResources.ColorSand,
+        color: color,
       ),
       padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      child: Text(label),
+      child: Text(
+        label,
+      ),
     );
   }
 }

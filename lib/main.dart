@@ -35,12 +35,11 @@ class App extends StatelessWidget {
     return MaterialApp(
       title: 'Dixit',
       theme: ThemeData(
-        primaryColor: AppResources.ColorSand,
-        accentColor: AppResources.ColorRed,
-        backgroundColor: AppResources.ColorOrange,
-        scaffoldBackgroundColor: AppResources.ColorOrange,
+        primaryColor: AppResources.ColorRed,
+        backgroundColor: AppResources.ColorSand,
+        scaffoldBackgroundColor: AppResources.ColorSand,
         cardTheme: CardTheme(
-          color: AppResources.ColorSand,
+          color: AppResources.ColorOrange,
         )
       ),
       home: MainPage(),
