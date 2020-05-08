@@ -21,6 +21,7 @@ Room _$RoomFromJson(Map<String, dynamic> json) {
         ? null
         : Phase.fromJson(json['previousPhase'] as Map<String, dynamic>),
     turn: json['turn'] as int,
+    createDate: dateFromString(json['createDate'] as String),
     startDate: dateFromString(json['startDate'] as String),
     endDate: dateFromString(json['endDate'] as String),
   )..endScore = json['endScore'] as int;
@@ -43,6 +44,7 @@ Map<String, dynamic> _$RoomToJson(Room instance) {
   writeNotNull('previousPhase', instance.previousPhase?.toJson());
   writeNotNull('turn', instance.turn);
   writeNotNull('endScore', instance.endScore);
+  writeNotNull('createDate', dateToString(instance.createDate));
   writeNotNull('startDate', dateToString(instance.startDate));
   writeNotNull('endDate', dateToString(instance.endDate));
   return val;

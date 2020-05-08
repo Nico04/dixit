@@ -87,7 +87,7 @@ class GamePage extends StatelessWidget {
                   var isHost = player.position == 1;
 
                   // WaitingLobby
-                  if (room.turn == 0) {
+                  if (room.startDate == null) {
                     instructionsColor = _buildInstructionsColor(isHost);
                     instructionsText = 'En attente des joueurs';
 
@@ -1138,10 +1138,9 @@ class GamePageBloc with Disposable {
     for (var player in room.players.values)
       player.cards = _drawCards(room, 6);
 
-    // End score
+    // Room info
+    room.startDate = DateTime.now();
     room.endScore = endGameScore;
-
-    // First turn
     room.turn = 1;
 
     // First phase
