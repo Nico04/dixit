@@ -1256,8 +1256,8 @@ class GamePageBloc with Disposable {
     player.cards.remove(card);
 
     // Update DB
-    await DatabaseService.savePhase(room.name, room.phase);
     await DatabaseService.savePlayer(room.name, player);
+    await DatabaseService.savePhase(room.name, room.phase);
   }
 
   Future<void> _toVotePhase(Room room) async {
