@@ -1,8 +1,7 @@
 import 'dart:collection';
-
 import 'package:dixit/helpers/tools.dart';
-import 'package:json_annotation/json_annotation.dart';
 import '_models.dart';
+import 'package:json_annotation/json_annotation.dart';
 
 part 'room.g.dart';
 
@@ -10,7 +9,7 @@ part 'room.g.dart';
 class Room {
   final String name;    // Room name, may differ from the database key which is normalized
   final List<int> drawnCards;   // List of drawn cards IDs. Used to avoid drawing same card more than once. The max used cards in a game is around 100, so it's more efficient to store drawnCards instead of left cards.
-  final LinkedHashMap<String, Player> players;    // <playerName, player> - Ordered by player.position
+  final LinkedHashMap<String, Player> players;    // <playerName, player> - Ordered by player.position (Needed to respect next storyteller role each turn)
   Phase phase;
   Phase previousPhase;  // Keep a ref to previous phase when starting a new turn
   int turn;

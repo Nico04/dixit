@@ -7,6 +7,8 @@ import 'package:dixit/resources/resources.dart';
 import 'package:dixit/services/database_service.dart';
 import 'package:dixit/services/web_services.dart';
 import 'package:dixit/widgets/_widgets.dart';
+import 'package:duration/duration.dart';
+import 'package:duration/locale.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +19,7 @@ import 'package:photo_view/photo_view_gallery.dart';
 import 'package:provider/provider.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:screen/screen.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 const _pageContentPadding = EdgeInsets.all(15);
 
@@ -268,44 +271,47 @@ class GameHeader extends StatelessWidget {
           children: <Widget>[
 
             // Top
-            Row(
-              children: <Widget>[
+            if (storytellerText?.isNotEmpty == true)
+              ...[
+                Row(
+                  children: <Widget>[
 
-                // Content
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      children: <Widget>[
+                    // Content
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          children: <Widget>[
 
-                        // Storyteller name
-                        if (storytellerText?.isNotEmpty == true)
-                          ...[
-                            AppResources.SpacerTiny,
-                            Text(storytellerText),
+                            // Storyteller name
+                            if (storytellerText?.isNotEmpty == true)
+                              ...[
+                                AppResources.SpacerTiny,
+                                Text(storytellerText),
+                              ],
+
+                            if (sentence?.isNotEmpty == true)
+                              ...[
+                                AppResources.SpacerTiny,
+                                Text(
+                                  sentence,
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+
                           ],
-
-                        if (sentence?.isNotEmpty == true)
-                          ...[
-                            AppResources.SpacerTiny,
-                            Text(
-                              sentence,
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-
-                      ],
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
+                AppResources.SpacerTiny,
               ],
-            ),
 
             // Instructions
-            AppResources.SpacerTiny,
             Container(
               color: instructionsColor,
               padding: const EdgeInsets.all(8),
@@ -372,7 +378,9 @@ class _WaitingLobbyState extends State<WaitingLobby> {
                   values: [_endGameScore],
                   min: 5,
                   max: 50,
-                  step: 5,
+                  step: FlutterSliderStep(
+                    step: 5
+                  ),
                   tooltip: FlutterSliderTooltip(
                     disabled: true,
                     format: (value) => '${double.parse(value).toInt()}',    //Doesn't work, see https://github.com/Ali-Azmoud/flutter_xlider/issues/65
@@ -384,7 +392,7 @@ class _WaitingLobbyState extends State<WaitingLobby> {
                   },
                   trackBar: FlutterSliderTrackBar(
                     activeTrackBar: BoxDecoration(
-                      color: AppResources.ColorSand,
+                      color: AppResources.ColorOrange,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -723,6 +731,18 @@ class _CardPickerState extends State<CardPicker> {
                   child: Text('Carte ${_currentCardIndex + 1} / ${widget.cards.length}'),
                 ),
 
+                // Exit button
+                Positioned(
+                  top: 10,
+                  left: 10,
+                  child: SafeArea(
+                    child: FloatingActionButton(
+                      child: Icon(Icons.close),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ),
+                )
+
               ],
             ),
           ),
@@ -831,101 +851,126 @@ class Stats extends StatelessWidget {
       builder: (context, bloc, _) {
         return Consumer<Room>(
           builder: (context, room, _) {
-            return SingleChildScrollView(
-              child: Padding(
-                padding: _pageContentPadding,
-                child: Column(
-                  children: <Widget>[
-
-                    // Scores
-                    _buildCard(
-                      context: context,
-                      icon: Icons.stars,
-                      title: 'Scores',
-                      child: _buildScores(
-                          room.players.map((playerName, player) => MapEntry(playerName, player.score))
-                      ),
+            return LayoutBuilder(
+              builder: (context, box) {
+                return SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: box.maxHeight,
                     ),
-
-                    // Previous phase info
-                    if (room.previousPhase != null)
-                    ...[
-                      AppResources.SpacerMedium,
-                      _buildCard(
-                        context: context,
-                        icon: Icons.undo,
-                        title: 'Tour précédent',
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: <Widget>[
-                                Text('Le conteur était '),
-                                Text(
-                                  room.previousPhase.storytellerName,
-                                  style: TextStyle(fontStyle: FontStyle.italic),
-                                ),
-                              ],
-                            ),
-                            AppResources.SpacerTiny,
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: <Widget>[
-                                Text('La phrase était '),
-                                Text(
-                                  room.previousPhase.sentence,
-                                  style: TextStyle(fontStyle: FontStyle.italic),
-                                ),
-                              ],
-                            ),
-                            AppResources.SpacerSmall,
-                            _buildScores(
-                              room.previousPhase.scores,
-                              delta: true
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-
-                    // Room info
-                    AppResources.SpacerMedium,
-                    _buildCard(
-                      context: context,
-                      icon: Icons.info,
-                      title: room.name,
+                    child: Padding(
+                      padding: _pageContentPadding,
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: <Widget>[
-                          Text(bloc.playerName),
-                          Text('Tour ${room.turn}'),
-                          Text('Partie en ${room.endScore} points'),
-                          Text('${room.players.length} joueurs'),
-                          Text("${room.drawnCards.length} cartes piochées"),
-                          Text('Commencé le ${AppResources.formatterFriendlyDate.format(room.startDate)}'),
-                          if (room.endDate != null)
-                            Text('Terminé le ${AppResources.formatterFriendlyDate.format(room.endDate)}'),
+
+                          // Content
+                          Column(
+                            children: <Widget>[
+
+                              // Scores
+                              _buildCard(
+                                context: context,
+                                icon: Icons.stars,
+                                title: 'Scores',
+                                child: _buildScores(
+                                    room.players.map((playerName, player) => MapEntry(playerName, player.score))
+                                ),
+                              ),
+
+                              // Previous phase info
+                              if (room.previousPhase != null)
+                              ...[
+                                AppResources.SpacerMedium,
+                                _buildCard(
+                                  context: context,
+                                  icon: Icons.undo,
+                                  title: 'Tour précédent',
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: <Widget>[
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: <Widget>[
+                                          Text('Le conteur était '),
+                                          Text(
+                                            room.previousPhase.storytellerName,
+                                            style: TextStyle(fontStyle: FontStyle.italic),
+                                          ),
+                                        ],
+                                      ),
+                                      AppResources.SpacerTiny,
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: <Widget>[
+                                          Text('La phrase était '),
+                                          Text(
+                                            room.previousPhase.sentence,
+                                            style: TextStyle(fontStyle: FontStyle.italic),
+                                          ),
+                                        ],
+                                      ),
+                                      AppResources.SpacerSmall,
+                                      _buildScores(
+                                        room.previousPhase.scores,
+                                        delta: true
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+
+                              // Room info
+                              AppResources.SpacerMedium,
+                              _buildCard(
+                                context: context,
+                                icon: Icons.info,
+                                title: room.name,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: <Widget>[
+                                    Text(bloc.playerName),
+                                    Text('Tour ${room.turn}'),
+                                    Text('Partie en ${room.endScore} points'),
+                                    Text('${room.players.length} joueurs'),
+                                    Text("${room.drawnCards.length} cartes piochées"),
+                                    Text('Commencé le ${AppResources.formatterFriendlyDate.format(room.startDate)}'),
+                                    if (room.endDate != null)
+                                      ...[
+                                        Text('Terminé ${timeago.format(room.endDate)}'),
+                                        Text('La partie à duré environ ${printDuration(
+                                          room.endDate.difference(room.startDate),
+                                          locale: frenchLocale,
+                                          delimiter: ', ',
+                                          conjugation: ' et ',
+                                          tersity: DurationTersity.minute
+                                        )}')
+                                      ],
+                                  ],
+                                ),
+                              ),
+
+                            ],
+                          ),
+
+                          // Exit button
+                          AppResources.SpacerMedium,
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: AsyncButton(
+                              text: 'Quitter la partie',
+                              onPressed: () async {
+                                if (await GamePage.askExit(context))
+                                  Navigator.of(context).pop();
+                              },
+                            ),
+                          ),
                         ],
                       ),
                     ),
-
-                    // Exit button
-                    AppResources.SpacerMedium,
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: AsyncButton(
-                        text: 'Quitter la partie',
-                        onPressed: () async {
-                          if (await GamePage.askExit(context))
-                            Navigator.of(context).pop();
-                        },
-                      ),
-                    ),
-
-                  ],
-                ),
-              ),
+                  ),
+                );
+              }
             );
           }
         );
@@ -1138,14 +1183,9 @@ class GamePageBloc with Disposable {
   }
 
   Future<void> _toVotePhase(Room room) async {
-    // Shuffle played card
-    room.phase.playedCards = Map.fromEntries(room.phase.playedCards.entries.toList(growable: false)..shuffle());    //TODO because order is not guaranteed by Firebase, this may be pointless ?
-
-    // Update phase
-    room.phase.number = Phase.Phase3_vote;
-
+    // => No need to shuffle played card because it's sorted by CardID (which is arbitrary)
     // Directly update DB
-    await DatabaseService.savePhase(room.name, room.phase);
+    await DatabaseService.savePhaseNumber(room.name, Phase.Phase3_vote);
   }
 
   Future<void> voteCard(Room room, int card) async {

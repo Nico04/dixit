@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 import 'pages/_pages.dart';
 import 'services/storage_service.dart';
@@ -20,6 +21,7 @@ void main() async {
   // Init localisation formatter
   Intl.defaultLocale = 'fr';
   initializeDateFormatting();
+  timeago.setLocaleMessages('en', timeago.FrMessages());      //Set default timeAgo local to fr
 
   // Start app
   runApp(App());
@@ -36,6 +38,7 @@ class App extends StatelessWidget {
       title: 'Dixit',
       theme: ThemeData(
         primaryColor: AppResources.ColorRed,
+        accentColor: AppResources.ColorSand,
         backgroundColor: AppResources.ColorSand,
         scaffoldBackgroundColor: AppResources.ColorSand,
         cardTheme: CardTheme(
