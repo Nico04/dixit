@@ -5,27 +5,44 @@ class AsyncButton extends StatelessWidget {
   final String text;
   final VoidCallback onPressed;
   final bool isBusy;
-  final Widget isBusyChild;
 
-  const AsyncButton({Key key, this.onPressed, this.text, this.isBusy, this.isBusyChild}) : super(key: key);
+  const AsyncButton({Key key, this.onPressed, this.text, this.isBusy}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return RaisedButton(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(5),
-      ),
-      color: AppResources.ColorDarkSand,
       child: AnimatedCrossFade(
-        duration: AppResources.DurationAnimationMedium,   //Duration(seconds: 3), //
+        duration: AppResources.DurationAnimationMedium,
         firstChild: Text(
           text,
           style: TextStyle(
             color: AppResources.ColorRed,
           ),
         ),
-        secondChild: isBusyChild ?? CircularProgressIndicator(),
+        secondChild: SizedBox(
+          width: 25,
+          height: 25,
+          child: Padding(
+            padding: const EdgeInsets.all(2),
+            child: CircularProgressIndicator(),
+          )
+        ),
         crossFadeState: isBusy != true ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+        layoutBuilder: (topChild, topChildKey, bottomChild, bottomChildKey) {
+          return Stack(
+            alignment: Alignment.center,
+            children: <Widget>[
+              Container(
+                key: bottomChildKey,
+                child: bottomChild,
+              ),
+              Container(
+                key: topChildKey,
+                child: topChild,
+              )
+            ],
+          );
+        },
       ),
       onPressed: isBusy == true ? null : onPressed,
     );

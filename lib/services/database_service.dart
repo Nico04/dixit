@@ -18,11 +18,6 @@ class DatabaseService {
   static Future<void> saveRoom(Room room) async =>
     await _getRoomRef(room.name).setData(room.toJson());
 
-  static Future<int> getRoomsCount() async {
-    //TODO need to use a Cloud Function to keep rooms.length updated on the DB. See https://stackoverflow.com/questions/46554091/cloud-firestore-collection-count
-    throw UnimplementedError();
-  }
-
   static Future<void> savePhase(String roomName, Phase phase) async =>
     await _getRoomRef(roomName).setData({
       'phase': phase.toJson(),

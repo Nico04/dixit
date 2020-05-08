@@ -65,7 +65,7 @@ class _MainPageState extends State<MainPage> {
                               labelText: 'Pseudo'
                             ),
                             textInputAction: TextInputAction.next,
-                            validator: AppResources.validatorNotEmpty,
+                            validator: AppResources.validatorNotEmptyNorSpecialChar,
                             onFieldSubmitted: (value) => FocusScope.of(context).requestFocus(_roomNameFocus),
                             onSaved: (value) => _bloc.playerName = value,
                           ),
@@ -78,7 +78,7 @@ class _MainPageState extends State<MainPage> {
                             ),
                             textInputAction: TextInputAction.done,
                             focusNode: _roomNameFocus,
-                            validator: (value) => AppResources.validatorNotEmpty(value) ?? (value == 'length' ? 'Invalide' : null),
+                            validator: AppResources.validatorNotEmptyNorSpecialChar,
                             onFieldSubmitted: (value) => _bloc.validate(context),
                             onSaved: (value) => _bloc.roomName = value,
                           ),
@@ -93,7 +93,7 @@ class _MainPageState extends State<MainPage> {
                                 return Column(
                                   children: <Widget>[
                                     Tooltip(
-                                      child: Text('Une erreur est survenue'),
+                                      child: Text(r'/!\ Echec de la synchronisation des données /!\'),
                                       message: snapshot.error.toString(),
                                     ),
                                     RaisedButton(
@@ -103,20 +103,10 @@ class _MainPageState extends State<MainPage> {
                                   ],
                                 );
 
-                              /*
-                              if (snapshot.data != true)
-                                return Column(
-                                  children: <Widget>[
-                                    Text('Le jeu est en cours de préparation'),
-                                    CircularProgressIndicator(),
-                                  ],
-                                );*/
-
                               return AsyncButton(
                                 text: 'Rejoindre partie',
                                 onPressed: () => _bloc.validate(context),
                                 isBusy: snapshot.data,
-                                isBusyChild: CircularProgressIndicator(),
                               );
                             }
                           )
@@ -150,11 +140,10 @@ class MainPageBloc with Disposable {
     try {
       isBusy.add(true);   // Needed for when re-trying
       cards = await WebServices.getCardsNames();
+      if (!isBusy.isClosed && isBusy.value != false)
+        isBusy.add(false);
     } catch (e) {
       isBusy.addError(e);
-    } finally {
-      if (isBusy.value != false)
-        isBusy.add(false);
     }
   }
 
@@ -174,67 +163,60 @@ class MainPageBloc with Disposable {
     playerName = playerName.trim();
 
     // Join room
-    try {
-      isBusy.add(true);
+    await startAsyncTask(
+      () async {
+        isBusy.add(true);
 
-      await DatabaseService.editRoomInTransaction(roomName, (room) {
-        var hasBeenModified = false;
+        await DatabaseService.editRoomInTransaction(roomName, (room) {
+          var hasBeenModified = false;
 
-        // If room is new, create it
-        if (room == null) {
-          room = Room(roomName);
-          hasBeenModified = true;
-        }
+          // If room is new, create it
+          if (room == null) {
+            room = Room(roomName);
+            hasBeenModified = true;
+          }
 
-        // Get player
-        var player = room.players.values.firstWhere((p) => p.name.normalized == playerName.normalized, orElse: () => null);
+          // Get player
+          var player = room.players.values.firstWhere((p) => p.name.normalized == playerName.normalized, orElse: () => null);
 
-        // If this player is new to the room
-        if (player == null) {
-          if (room.isGameStarted)
-            throw ExceptionWithMessage("Impossible d'ajouter un nouveau joueur sur une partie en cours");
+          // If this player is new to the room
+          if (player == null) {
+            if (room.isGameStarted)
+              throw ExceptionWithMessage("Impossible d'ajouter un nouveau joueur sur une partie en cours");
 
-          player = Player(App.deviceID, playerName, room.players.length + 1);
-          room.players[player.name] = player;
-          hasBeenModified = true;
-        }
+            player = Player(App.deviceID, playerName, room.players.length + 1);
+            room.players[player.name] = player;
+            hasBeenModified = true;
+          }
 
-        // If player is not new to the room
-        else {
-          // Can't join game if user has changed device. This is to prevent connecting to multiple devices with the same playerName
-          if (player.deviceID != App.deviceID)
-            throw ExceptionWithMessage("Impossible de changer d'appareil lors d'une partie en cours");
-        }
+          // If player is not new to the room
+          else {
+            // Can't join game if user has changed device. This is to prevent connecting to multiple devices with the same playerName
+            if (player.deviceID != App.deviceID)
+              throw ExceptionWithMessage("Impossible de changer d'appareil lors d'une partie en cours");
+          }
 
-        // Update fields
-        roomName = room.name;
-        playerName = player.name;
+          // Update fields
+          roomName = room.name;
+          playerName = player.name;
 
-        // Save data to DB
-        return hasBeenModified ? room : null;
-      });
+          // Save data to DB
+          return hasBeenModified ? room : null;
+        });
 
-      // Save player name locally
-      StorageService.savePlayerName(playerName);    // Do not need to await
+        // Save player name locally
+        await StorageService.savePlayerName(playerName);
 
-      // Go to room
-      // TODO if 2 devices with same values join at the same time, they both go the the waiting lobby with just one player. Just getRoom(fromServer: true) before navigation ?
-      navigateTo(context, () => GamePage(
-        playerName: playerName,
-        roomName: roomName,
-        cards: cards,
-      ));
-    }
-
-    catch (e) {
-      showMessage(context, e.toString(), isError: true);
-      return;
-    }
-
-    finally {
-      if (isBusy.value != false)
-        isBusy.add(false);
-    }
+        // Go to room
+        navigateTo(context, () => GamePage(
+          playerName: playerName,
+          roomName: roomName,
+          cards: cards,
+        ));
+      },
+      isBusy,
+      showErrorContext: context
+    );
   }
 
   @override

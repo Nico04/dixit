@@ -38,12 +38,19 @@ class App extends StatelessWidget {
       title: 'Dixit',
       theme: ThemeData(
         primaryColor: AppResources.ColorRed,
-        accentColor: AppResources.ColorSand,
+        accentColor: AppResources.ColorDarkSand,
         backgroundColor: AppResources.ColorSand,
         scaffoldBackgroundColor: AppResources.ColorSand,
         cardTheme: CardTheme(
           color: AppResources.ColorOrange,
-        )
+        ),
+        buttonTheme: ButtonThemeData(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(5),
+          ),
+          buttonColor: AppResources.ColorDarkSand,
+          textTheme: ButtonTextTheme.primary,
+        ),
       ),
       home: MainPage(),
     );

@@ -4,7 +4,9 @@ import 'dart:math';
 import 'package:diacritic/diacritic.dart';
 import 'package:dixit/resources/resources.dart';
 import 'package:flash/flash.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:rxdart/rxdart.dart';
 
 Future<T> navigateTo<T extends Object>(BuildContext context, Widget Function() builder, {int removePreviousRoutesAmount, bool clearHistory = false}) async {
   if (clearHistory == true && removePreviousRoutesAmount != null)
@@ -128,6 +130,19 @@ void clearFocus(BuildContext context) {
   /// - Validate the form with the 'done' keyboard key, then navigator.push() will make the first form field take the focus and open the keyboard
   /// see https://github.com/flutter/flutter/issues/48158
   FocusScope.of(context).requestFocus(FocusNode());
+}
+
+Future<void> startAsyncTask(AsyncCallback action, BehaviorSubject<bool> isBusyStream, { BuildContext showErrorContext}) async {
+  try {
+    isBusyStream.add(true);
+    await action();
+  } catch (e) {
+    if (showErrorContext != null)
+      showMessage(showErrorContext, AppResources.TextError, exception: e);
+  } finally {
+    if (!isBusyStream.isClosed && isBusyStream.value != false)
+      isBusyStream.add(false);
+  }
 }
 
 String plural(int count, String input) => '$count $input${count > 1 ? 's' : ''}';

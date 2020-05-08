@@ -22,7 +22,11 @@ class AppResources {
 
   // Validator
   static final validatorNotEmpty = (String value) => value?.isNotEmpty != true ? "Obligatoire" : null;
+  static final validatorNotEmptyNorSpecialChar = (String value) => validatorNotEmpty(value) ?? (value.contains(RegExp(r'[.\[\]\*`\/\\]')) ? 'Caractère interdit' : null);
 
   //Formatter
   static final formatterFriendlyDate = DateFormat("d MMM yyyy 'à' HH'h'mm");
+
+  // Texts
+  static const TextError = "Une erreur est survenue";
 }

@@ -56,7 +56,7 @@ class GamePage extends StatelessWidget {
               builder: (context, snapshot) {
                 var room = snapshot.data;
 
-                // If data is not available
+                // If data is not available (either not yet available OR room deleted while playing)
                 if (room == null) {
                   return Scaffold(
                     body: SafeArea(
@@ -67,6 +67,11 @@ class GamePage extends StatelessWidget {
                             CircularProgressIndicator(),
                             AppResources.SpacerMedium,
                             Text('Synchronisation en cours'),
+                            AppResources.SpacerMedium,
+                            RaisedButton(
+                              child: Text('Quitter la partie'),
+                              onPressed: () => Navigator.of(context).pop(),
+                            ),
                           ],
                         ),
                       ),
@@ -94,7 +99,7 @@ class GamePage extends StatelessWidget {
                     return WaitingLobby(
                       room.players.keys.toList(growable: false),
                       showStartButton: isHost,
-                      onStartGame: (endGameScore) => bloc.startGame(room, endGameScore),
+                      onStartGame: (endGameScore) async => await bloc.startGame(room, endGameScore),
                     );
                   }
 
@@ -330,7 +335,7 @@ class GameHeader extends StatelessWidget {
 class WaitingLobby extends StatefulWidget {
   final List<String> playersName;
   final bool showStartButton;
-  final ValueChanged<int> onStartGame;
+  final Future<void> Function(int endGameScore) onStartGame;
 
   const WaitingLobby(this.playersName, {this.showStartButton, this.onStartGame});
 
@@ -340,6 +345,8 @@ class WaitingLobby extends StatefulWidget {
 
 class _WaitingLobbyState extends State<WaitingLobby> {
   double _endGameScore = 30;
+
+  final isBusy = BehaviorSubject.seeded(false);
 
   @override
   Widget build(BuildContext context) {
@@ -414,9 +421,22 @@ class _WaitingLobbyState extends State<WaitingLobby> {
 
                 // Start button
                 AppResources.SpacerMedium,
-                AsyncButton(
-                  text: 'Commencer',
-                  onPressed: () => widget.onStartGame(_endGameScore.toInt()),   // TODO min 4 players
+                StreamBuilder<bool>(
+                  stream: isBusy,
+                  initialData: isBusy.value,
+                  builder: (context, snapshot) {
+                    return AsyncButton(
+                      text: 'Commencer',
+                      onPressed: () {     // TODO min 4 players
+                        startAsyncTask(
+                          () async => await widget.onStartGame(_endGameScore.toInt()),
+                          isBusy,
+                          showErrorContext: context
+                        );
+                      },
+                      isBusy: snapshot.data,
+                    );
+                  }
                 ),
               ],
 
@@ -424,6 +444,12 @@ class _WaitingLobbyState extends State<WaitingLobby> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    isBusy.close();
+    super.dispose();
   }
 }
 
@@ -833,7 +859,9 @@ class _CardPickerState extends State<CardPicker> {
     }
 
     catch (e) {
-      isBusy.add(false);
+      showMessage(context, AppResources.TextError, exception: e);
+      if (!isBusy.isClosed && isBusy.value != false)
+        isBusy.add(false);
     }
   }
 
@@ -957,8 +985,8 @@ class Stats extends StatelessWidget {
                           AppResources.SpacerMedium,
                           Align(
                             alignment: Alignment.centerRight,
-                            child: AsyncButton(
-                              text: 'Quitter la partie',
+                            child: RaisedButton(
+                              child: Text('Quitter la partie'),
                               onPressed: () async {
                                 if (await GamePage.askExit(context))
                                   Navigator.of(context).pop();
@@ -1103,16 +1131,67 @@ class GamePageBloc with Disposable {
       _currentPhaseNumber = newPhaseNumber;
     }
 
-    var isStoryteller = playerName == room.phase?.storytellerName;
+    // Go to next phase if needed
+    _tryToNextPhase(room);
+  }
 
-    // TODO prevent calling a function again before it has done.
+  Future _currentTask;
+  Room _pendingTaskRoom;
+  Timer _pendingRetry;
+  Future<void> _tryToNextPhase(Room room) async {
+    print('tryToNextPhase.start');
+
+    // Only if player is storyteller
+    if (playerName != room.phase?.storytellerName)
+      return;
+
+    // If a task is already running
+    if (_currentTask != null) {
+      // Add room to be processed ASAP (just keep the more recent one)
+      print('tryToNextPhase.addPending');
+      _pendingTaskRoom = room;
+      return;
+    }
+
+    // Clean retry timer
+    _pendingRetry?.cancel();
+    _pendingRetry = null;
+
+    // Start task
+    try {
+      _currentTask = _toNextPhase(room);
+      await _currentTask;
+    }
+
+    // Task failed
+    catch(e) {
+      print('tryToNextPhase.Error : $e');
+
+      // Retry after a delay
+      if (_pendingTaskRoom == null)
+        _pendingRetry = Timer(Duration(seconds: 5), () => _tryToNextPhase(room));
+    }
+
+    // Clean
+    print('tryToNextPhase.clean');
+    _currentTask = null;
+
+    // Execute pending task
+    if (_pendingTaskRoom != null) {
+      print('tryToNextPhase.startPending');
+      _tryToNextPhase(_pendingTaskRoom);
+      _pendingTaskRoom = null;
+    }
+  }
+
+  Future<void> _toNextPhase(Room room) async {
     // If everyone has chosen a card, go to phase 3
-    if (isStoryteller && room.phase.number == Phase.Phase2_cardSelect && room.phase.playedCards.length == room.players.length)
-      _toVotePhase(room);
+    if (room.phase.number == Phase.Phase2_cardSelect && room.phase.playedCards.length == room.players.length)
+      await _toVotePhase(room);
 
     // If everyone has voted a card, go to phase 4
-    if (isStoryteller && room.phase.number == Phase.Phase3_vote && room.phase.votes.values.fold(0, (sum, players) => sum + players.length) == room.players.length)
-      _toScoresPhase(room);
+    else if (room.phase.number == Phase.Phase3_vote && room.phase.votes.values.fold(0, (sum, players) => sum + players.length) == room.players.length)
+      await _toScoresPhase(room);
   }
 
   List<CardData> getCardDataFromIDs(Iterable<int> cardsIDs) => cardsIDs?.map((id) => cards[id])?.toList(growable: false);
@@ -1280,6 +1359,7 @@ class GamePageBloc with Disposable {
     //Keep screen awake
     Screen.keepOn(false);
 
+    //Clean up
     _roomStreamSubscription.cancel();
     super.dispose();
   }
