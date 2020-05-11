@@ -94,7 +94,9 @@ class GamePage extends StatelessWidget {
                   // WaitingLobby
                   if (room.startDate == null) {
                     instructionsColor = _buildInstructionsColor(isHost);
-                    instructionsText = 'En attente des joueurs';
+                    instructionsText = isHost
+                      ? "Commencez la partie quand tout le monde est là"
+                      : "En attente de ${room.players.values.firstWhere((player) => player.position == 1).name}";
 
                     return WaitingLobby(
                       room.players.keys.toList(growable: false),
@@ -192,21 +194,16 @@ class GamePage extends StatelessWidget {
 
                 } ();
 
-                // When between phase 4 and 1
-                var displayPreviousPhase = room?.phase?.number == Phase.Phase1_storytellerSentence && room?.previousPhase != null;
-
                 // Build page
                 return Column(
                   children: <Widget>[
 
                     // Indications header
                     GameHeader(
-                      roomName: roomName,
-                      playerName: playerName,
                       storytellerText: () {
                         var storytellerName = displayPhase?.storytellerName;
                         if (storytellerName == null)
-                          return null;
+                          return "Salle d'attente '$roomName'";
                         return storytellerName == playerName
                           ? "Vous êtes le conteur"
                           : "Le conteur est $storytellerName";
@@ -214,8 +211,6 @@ class GamePage extends StatelessWidget {
                       sentence: displayPhase?.sentence,
                       instructionsColor: instructionsColor,
                       instructions: instructionsText,
-                      turn: room != null ? room.turn - (displayPreviousPhase ? 1 : 0) : null,
-                      phaseNumber: displayPhase?.number,
                     ),
 
                     // Content
@@ -254,16 +249,12 @@ class GamePage extends StatelessWidget {
 }
 
 class GameHeader extends StatelessWidget {
-  final String roomName;
-  final String playerName;
   final String storytellerText;
   final String sentence;
   final String instructions;
   final Color instructionsColor;
-  final int turn;
-  final int phaseNumber;
 
-  const GameHeader({Key key, this.instructionsColor, this.roomName, this.playerName, this.storytellerText, this.instructions, this.turn, this.phaseNumber, this.sentence}) : super(key: key);
+  const GameHeader({Key key, this.instructionsColor, this.storytellerText, this.instructions, this.sentence}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

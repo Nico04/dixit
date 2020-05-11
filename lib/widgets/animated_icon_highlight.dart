@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:dixit/resources/resources.dart';
 import 'package:flutter/material.dart';
 
 class AnimatedIconHighlight extends StatefulWidget {
@@ -19,6 +22,7 @@ class _AnimatedIconHighlightState extends State<AnimatedIconHighlight> with Sing
   AnimationController _controller;
   Animation<double> _animation;
   bool _loopHasCompleted = false;
+  Timer _timeout;
 
   @override
   void initState() {
@@ -40,14 +44,14 @@ class _AnimatedIconHighlightState extends State<AnimatedIconHighlight> with Sing
 
   void updatePlaying() {
     if (widget.playing != false && !_controller.isAnimating && !_loopHasCompleted) {
-      _controller.repeat()
-        .timeout(widget.duration * widget.loops, onTimeout: () {     //TODO This causes the animation to stop when re-started before timeout expired. See https://github.com/flutter/flutter/issues/53262.
-          _controller.reset();
-          _loopHasCompleted = true;
-        });
+      _controller.repeat();
+      _timeout?.cancel();
+      _timeout = Timer(widget.duration * (widget.loops + 1.4), () {
+        _controller.stop();
+        _loopHasCompleted = true;
+      });
     } else if (widget.playing == false) {
-      if (_controller.isAnimating)
-        _controller.reset();
+      _controller.reset();
       _loopHasCompleted = false;
     }
   }
@@ -88,7 +92,7 @@ class CirclePainter extends CustomPainter {
 
   CirclePainter(this.radius) {
     _paint = Paint()
-      ..color = Colors.green;
+      ..color = AppResources.ColorGreen;
   }
 
   @override
