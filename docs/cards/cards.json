@@ -358,11 +358,11 @@
     "id": 71,
     "filename": "card_072.jpg",
     "blurHash": "LVG8\u002Baof4Tx]-qt7RPWB8_w]xvNH"
-  },
+  },  
   {
     "id": 72,
-    "filename": "card_073.jpg",
-    "blurHash": "L8F4[;tdpI%eHLxnx[sm%zxWwKR,"
+    "filename": "card_073.png",
+    "blurHash": "LFD8a?NH9ZS20ykCWGs:0yxD-oWC"
   },
   {
     "id": 73,
@@ -1669,9 +1669,4 @@
     "filename": "card_334.png",
     "blurHash": "LEG*yCMe~n~7yBwbxY%eids:MzI@"
   },
-  {
-    "id": 334,
-    "filename": "card_335.png",
-    "blurHash": "LFD8a?NH9ZS20ykCWGs:0yxD-oWC"
-  }
 ]
