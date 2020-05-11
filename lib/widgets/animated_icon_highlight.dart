@@ -46,7 +46,7 @@ class _AnimatedIconHighlightState extends State<AnimatedIconHighlight> with Sing
     if (widget.playing != false && !_controller.isAnimating && !_loopHasCompleted) {
       _controller.repeat();
       _timeout?.cancel();
-      _timeout = Timer(widget.duration * (widget.loops + 1.4), () {
+      _timeout = Timer(widget.duration * (widget.loops + 0.4), () {
         _controller.stop();
         _loopHasCompleted = true;
       });

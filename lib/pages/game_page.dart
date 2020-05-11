@@ -203,7 +203,7 @@ class GamePage extends StatelessWidget {
                       storytellerText: () {
                         var storytellerName = displayPhase?.storytellerName;
                         if (storytellerName == null)
-                          return "Salle d'attente '$roomName'";
+                          return roomName;
                         return storytellerName == playerName
                           ? "Vous êtes le conteur"
                           : "Le conteur est $storytellerName";
@@ -458,8 +458,17 @@ class GameBoard extends StatefulWidget {
   _GameBoardState createState() => _GameBoardState();
 }
 
-class _GameBoardState extends State<GameBoard> {
-  int _currentTabIndex = 0;
+class _GameBoardState extends State<GameBoard> with SingleTickerProviderStateMixin {
+  TabController _tabController;
+
+  @override
+  void initState() {
+    _tabController = TabController(vsync: this, length: 3);
+    _tabController.addListener(() {
+      setState(() { });
+    });
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -474,8 +483,8 @@ class _GameBoardState extends State<GameBoard> {
         } ();
 
         return Scaffold(
-          body: IndexedStack(
-            alignment: Alignment.center,
+          body: TabBarView(
+            controller: _tabController,
             children: <Widget>[
 
               // Player Hand
@@ -497,21 +506,20 @@ class _GameBoardState extends State<GameBoard> {
               Stats(),
 
             ],
-            index: _currentTabIndex,
           ),
           bottomNavigationBar: BottomNavigationBar(
             items: [
               BottomNavigationBarItem(
                 icon: AnimatedIconHighlight(
                   child: Icon(Icons.pan_tool),
-                  playing: todoTabIndex == 0 && _currentTabIndex != todoTabIndex,
+                  playing: todoTabIndex == 0 && _tabController.index != todoTabIndex,
                 ),
                 title: Text('Main'),
               ),
               BottomNavigationBarItem(
                 icon: AnimatedIconHighlight(
                   child: Icon(Icons.table_chart),
-                  playing: todoTabIndex == 1 && _currentTabIndex != todoTabIndex,
+                  playing: todoTabIndex == 1 && _tabController.index != todoTabIndex,
                 ),
                 title: Text('Table'),
               ),
@@ -520,11 +528,9 @@ class _GameBoardState extends State<GameBoard> {
                 title: Text('Stats'),
               ),
             ],
-            currentIndex: _currentTabIndex,
+            currentIndex: _tabController.index,
             onTap: (index) {
-              setState(() {
-                _currentTabIndex = index;
-              });
+              _tabController.index = index;
             },
             showUnselectedLabels: false,
             backgroundColor: AppResources.ColorOrange,

@@ -52,8 +52,8 @@ Future<void> showMessage(BuildContext context, String message, {bool isError, Ob
       return Flash(
         controller: controller,
         backgroundColor: isError ? Colors.red : Colors.white,
-        margin: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
-        position: FlashPosition.top,
+        margin: EdgeInsets.symmetric(horizontal: 30, vertical: 70),
+        position: FlashPosition.bottom,
         horizontalDismissDirection: HorizontalDismissDirection.horizontal,
         borderRadius: BorderRadius.circular(8.0),
         boxShadows: kElevationToShadow[8],
