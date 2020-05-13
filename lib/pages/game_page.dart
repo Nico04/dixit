@@ -458,14 +458,17 @@ class GameBoard extends StatefulWidget {
   _GameBoardState createState() => _GameBoardState();
 }
 
-class _GameBoardState extends State<GameBoard> with SingleTickerProviderStateMixin {
-  TabController _tabController;
+class _GameBoardState extends State<GameBoard> {
+  int _currentTabIndex = 0;
+  PageController _pageController;
 
   @override
   void initState() {
-    _tabController = TabController(vsync: this, length: 3);
-    _tabController.addListener(() {
-      setState(() { });
+    _pageController = PageController(initialPage: _currentTabIndex);
+    _pageController.addListener(() {
+      var currentPage = _pageController.page.round();
+      if (currentPage != _currentTabIndex)
+      _updateTabIndex(currentPage);
     });
     super.initState();
   }
@@ -483,8 +486,8 @@ class _GameBoardState extends State<GameBoard> with SingleTickerProviderStateMix
         } ();
 
         return Scaffold(
-          body: TabBarView(
-            controller: _tabController,
+          body: PageView(
+            controller: _pageController,
             children: <Widget>[
 
               // Player Hand
@@ -512,14 +515,14 @@ class _GameBoardState extends State<GameBoard> with SingleTickerProviderStateMix
               BottomNavigationBarItem(
                 icon: AnimatedIconHighlight(
                   child: Icon(Icons.pan_tool),
-                  playing: todoTabIndex == 0 && _tabController.index != todoTabIndex,
+                  playing: todoTabIndex == 0 && _currentTabIndex != todoTabIndex,
                 ),
                 title: Text('Main'),
               ),
               BottomNavigationBarItem(
                 icon: AnimatedIconHighlight(
                   child: Icon(Icons.table_chart),
-                  playing: todoTabIndex == 1 && _tabController.index != todoTabIndex,
+                  playing: todoTabIndex == 1 && _currentTabIndex != todoTabIndex,
                 ),
                 title: Text('Table'),
               ),
@@ -528,9 +531,14 @@ class _GameBoardState extends State<GameBoard> with SingleTickerProviderStateMix
                 title: Text('Stats'),
               ),
             ],
-            currentIndex: _tabController.index,
+            currentIndex: _currentTabIndex,
             onTap: (index) {
-              _tabController.index = index;
+              _pageController.animateToPage(
+                index,
+                duration: AppResources.DurationAnimationMedium,
+                curve: Curves.easeInOut
+              );
+              _updateTabIndex(index);
             },
             showUnselectedLabels: false,
             backgroundColor: AppResources.ColorOrange,
@@ -540,6 +548,12 @@ class _GameBoardState extends State<GameBoard> with SingleTickerProviderStateMix
         );
       }
     );
+  }
+
+  void _updateTabIndex(int index) {
+    setState(() {
+      _currentTabIndex = index;
+    });
   }
 }
 
