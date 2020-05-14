@@ -18,6 +18,8 @@ class TextChip extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       child: Text(
         label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
       ),
     );
   }

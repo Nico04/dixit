@@ -65,7 +65,7 @@ class _MainPageState extends State<MainPage> {
                               labelText: 'Pseudo'
                             ),
                             textInputAction: TextInputAction.next,
-                            validator: AppResources.validatorNotEmptyNorSpecialChar,
+                            validator: AppResources.validatorLengthAndSpecialChar,
                             onFieldSubmitted: (value) => FocusScope.of(context).requestFocus(_roomNameFocus),
                             onSaved: (value) => _bloc.playerName = value,
                           ),
@@ -78,7 +78,7 @@ class _MainPageState extends State<MainPage> {
                             ),
                             textInputAction: TextInputAction.done,
                             focusNode: _roomNameFocus,
-                            validator: AppResources.validatorNotEmptyNorSpecialChar,
+                            validator: AppResources.validatorLengthAndSpecialChar,
                             onFieldSubmitted: (value) => _bloc.validate(context),
                             onSaved: (value) => _bloc.roomName = value,
                           ),

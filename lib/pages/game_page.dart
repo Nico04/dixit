@@ -151,7 +151,7 @@ class GamePage extends StatelessWidget {
                   // End of game
                   else if (phaseNumber == 0) {
                     instructionsColor = _buildInstructionsColor(false);
-                    instructionsText = "Partie terminée !";
+                    instructionsText = "Partie terminée !\nLe gagnant est ${room.players.values.reduce((bestPlayer, player) => player.score > bestPlayer.score ? player : bestPlayer).name} !";
                   }
 
                   var displayPlayedCards = phaseNumber != Phase.Phase2_cardSelect
@@ -202,11 +202,16 @@ class GamePage extends StatelessWidget {
                     GameHeader(
                       storytellerText: () {
                         var storytellerName = displayPhase?.storytellerName;
+
+                        // Wait room
                         if (storytellerName == null)
                           return roomName;
+
+                        // In-game
+                        var isPast = displayPhase?.number == Phase.Phase4_scores;
                         return storytellerName == playerName
-                          ? "Vous êtes le conteur"
-                          : "Le conteur est $storytellerName";
+                          ? "Vous ${isPast ? 'êtiez' : 'êtes'}  le conteur"
+                          : "Le conteur ${isPast ? 'était' : 'est'} $storytellerName";
                       } (),
                       sentence: displayPhase?.sentence,
                       instructionsColor: instructionsColor,
@@ -314,6 +319,7 @@ class GameHeader extends StatelessWidget {
               alignment: Alignment.center,
               child: Text(
                 instructions,
+                textAlign: TextAlign.center,
               ),
             ),
           ],
@@ -633,6 +639,8 @@ class CardsView extends StatelessWidget {
                           ? 'Ma carte'
                           : boardCard.owner,
                           style: TextStyle(color: Colors.white),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       )
                     ),
@@ -784,19 +792,6 @@ class _CardPickerState extends State<CardPicker> {
             ),
           ),
 
-          // Card Text
-          /**() {
-            var cardText = widget.cardsTextBottom?.getElement(widget.cards?.elementAt(_currentCardIndex)?.id);
-
-            if (cardText?.isNotEmpty == true)
-              return Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(cardText),
-              );
-
-            return SizedBox();
-          } (),*/
-
           // Select Button
           if (widget.onSelected != null)
             Padding(
@@ -815,7 +810,7 @@ class _CardPickerState extends State<CardPicker> {
                                 labelText: 'Phrase',
                               ),
                               textInputAction: TextInputAction.done,
-                              validator: AppResources.validatorNotEmpty,
+                              validator: (value) => AppResources.validatorNotEmpty(value) ?? AppResources.validatorLongLength(value),
                               onFieldSubmitted: (value) => validate(context),
                               onSaved: (value) => _sentence = value,
                             ),
@@ -913,7 +908,7 @@ class Stats extends StatelessWidget {
                                 icon: Icons.stars,
                                 title: 'Scores',
                                 child: _buildScores(
-                                    room.players.map((playerName, player) => MapEntry(playerName, player.score))
+                                  room.players.map((playerName, player) => MapEntry(playerName, player.score))
                                 ),
                               ),
 
@@ -939,15 +934,19 @@ class Stats extends StatelessWidget {
                                         ],
                                       ),
                                       AppResources.SpacerTiny,
-                                      Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: <Widget>[
-                                          Text('La phrase était '),
-                                          Text(
-                                            room.previousPhase.sentence,
-                                            style: TextStyle(fontStyle: FontStyle.italic),
-                                          ),
-                                        ],
+                                      IntrinsicWidth(
+                                        child: Row(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: <Widget>[
+                                            Text('La phrase était '),
+                                            Expanded(
+                                              child: Text(
+                                                room.previousPhase.sentence,
+                                                style: TextStyle(fontStyle: FontStyle.italic),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                       AppResources.SpacerSmall,
                                       _buildScores(
@@ -1076,6 +1075,7 @@ class Stats extends StatelessWidget {
             AppResources.SpacerSmall,
             _buildScoreColumn(
               texts: sortedScores.map((score) => (delta == true ? '+' : '') + '${score.value} points'),
+              alignment: CrossAxisAlignment.end,
             ),
           ];
         } (),
@@ -1083,9 +1083,9 @@ class Stats extends StatelessWidget {
     );
   }
 
-  Widget _buildScoreColumn({ Iterable<String> texts, bool bold }) {
+  Widget _buildScoreColumn({ Iterable<String> texts, bool bold, CrossAxisAlignment alignment = CrossAxisAlignment.start }) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: alignment,
       children: texts.map<Widget>((text) => Text(
         text,
         style: bold == true

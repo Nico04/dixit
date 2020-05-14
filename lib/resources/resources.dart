@@ -22,7 +22,10 @@ class AppResources {
 
   // Validator
   static final validatorNotEmpty = (String value) => value?.isNotEmpty != true ? "Obligatoire" : null;
-  static final validatorNotEmptyNorSpecialChar = (String value) => validatorNotEmpty(value) ?? (value.contains(RegExp(r'[.\[\]\*`\/\\]')) ? 'Caractère interdit' : null);
+  static final validatorShortLength = (String value) => value.length > 15 ? "Trop long" : null;
+  static final validatorLongLength = (String value) => value.length > 100 ? "Trop long" : null;
+  static final validatorSpecialChar = (String value) => value.contains(RegExp(r'[.\[\]\*`\/\\]')) ? 'Caractère interdit' : null;
+  static final validatorLengthAndSpecialChar = (String value) => validatorNotEmpty(value) ?? validatorShortLength(value) ?? validatorSpecialChar(value);
 
   //Formatter
   static final formatterFriendlyDate = DateFormat("d MMM yyyy 'à' HH'h'mm");
