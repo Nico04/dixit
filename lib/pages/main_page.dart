@@ -192,7 +192,8 @@ class MainPageBloc with Disposable {
           // If player is not new to the room
           else {
             // Can't join game if user has changed device. This is to prevent connecting to multiple devices with the same playerName
-            if (player.deviceID != App.deviceID)
+            // player.deviceID != null is useful to be able to force join by overriding database
+            if (player.deviceID != App.deviceID && player.deviceID != null)
               throw ExceptionWithMessage("Impossible de changer d'appareil lors d'une partie en cours");
           }
 

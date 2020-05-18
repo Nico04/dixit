@@ -20,6 +20,7 @@ import 'package:provider/provider.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:screen/screen.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import 'package:vibration/vibration.dart';
 
 const _pageContentPadding = EdgeInsets.all(15);
 
@@ -1136,8 +1137,13 @@ class GamePageBloc with Disposable {
       else if (newPhaseNumber == Phase.Phase4_scores)
         message = "Partie terminée";
 
-      if (message?.isNotEmpty == true)
+      if (message?.isNotEmpty == true) {
+        // Display message
         showMessage(context, message);
+
+        // Make the phone vibrate
+        Vibration.vibrate();
+      }
 
       _currentPhaseNumber = newPhaseNumber;
     }
