@@ -12,7 +12,7 @@ Future<T> navigateTo<T extends Object>(BuildContext context, Widget Function() b
   if (clearHistory == true && removePreviousRoutesAmount != null)
     throw ArgumentError("clearHistory and removePreviousRoutesAmount cannot be both set at the same");
 
-  var route = MaterialPageRoute<T>(
+  final route = MaterialPageRoute<T>(
     builder: (context) => builder()
   );
 
@@ -94,7 +94,7 @@ Future<void> showMessage(BuildContext context, String message, {bool isError, Ob
 /// Return false if user cancel or dismiss
 /// Return true AFTER calling onUserConfirmed if user said yes
 Future<bool> askUserConfirmation({ BuildContext context, String title, String message, String okText }) async {
-  var answer = await showDialog<bool>(
+  final answer = await showDialog<bool>(
     context: context,
     builder: (context) => AlertDialog(
       title: Text(
@@ -208,7 +208,7 @@ extension ExtendedMap<K, V> on Map<K, V> {
   /// Return a LinkedHashMap sorted using [compare] function
   LinkedHashMap<K, V> sorted([int compare(MapEntry<K, V> a, MapEntry<K, V> b)]) {
     if (this.length <= 1) return this;
-    var sortedEntries = this.entries.toList(growable: false)..sort(compare);
+    final sortedEntries = this.entries.toList(growable: false)..sort(compare);
     return LinkedHashMap.fromEntries(sortedEntries);
   }
 }

@@ -152,7 +152,7 @@ class MainPageBloc with Disposable {
     clearFocus(context);   // Keyboard is closed automatically when called from "done" keyboard key, but not in other cases.
 
     // Validate form
-    var form = Form.of(context);
+    final form = Form.of(context);
     if (form.validate())
       form.save();
     else

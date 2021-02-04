@@ -55,7 +55,7 @@ class GamePage extends StatelessWidget {
             child: StreamBuilder<Room>(
               stream: bloc.roomStream,
               builder: (context, snapshot) {
-                var room = snapshot.data;
+                final room = snapshot.data;
 
                 // If data is not available (either not yet available OR room deleted while playing)
                 if (room == null) {
@@ -83,14 +83,14 @@ class GamePage extends StatelessWidget {
                 // Prepare
                 Color instructionsColor;
                 String instructionsText;
-                var phaseNumber = room.phase?.number ?? 0;
-                var displayPhase = room.turn >= 2 && phaseNumber <= Phase.Phase1_storytellerSentence ? room.previousPhase : room.phase;
+                final phaseNumber = room.phase?.number ?? 0;
+                final displayPhase = room.turn >= 2 && phaseNumber <= Phase.Phase1_storytellerSentence ? room.previousPhase : room.phase;
 
                 // Build content
                 Widget child = () {
                   // Vars
-                  var player = room.players[bloc.playerName];
-                  var isHost = player.position == 1;
+                  final player = room.players[bloc.playerName];
+                  final isHost = player.position == 1;
 
                   // WaitingLobby
                   if (room.startDate == null) {
@@ -107,7 +107,7 @@ class GamePage extends StatelessWidget {
                   }
 
                   // Vars
-                  var isStoryteller = player.name == room.phase?.storytellerName;
+                  final isStoryteller = player.name == room.phase?.storytellerName;
 
                   bool mustChooseSentence = false;
                   CardPickerSelectCallback onHandCardSelectedCallback;
@@ -126,9 +126,9 @@ class GamePage extends StatelessWidget {
 
                   // Phase 2
                   else if (phaseNumber == Phase.Phase2_cardSelect) {
-                    var waitedPlayersNames = room.players.keys.where((playerName) => !room.phase.playedCards.keys.contains(playerName));
-                    var hasPlayerSelected = !waitedPlayersNames.contains(player.name);
-                    var hasActionToDo = !isStoryteller && !hasPlayerSelected;
+                    final waitedPlayersNames = room.players.keys.where((playerName) => !room.phase.playedCards.keys.contains(playerName));
+                    final hasPlayerSelected = !waitedPlayersNames.contains(player.name);
+                    final hasActionToDo = !isStoryteller && !hasPlayerSelected;
                     instructionsColor = _buildInstructionsColor(hasActionToDo);
                     instructionsText = hasActionToDo
                       ? 'Choisir une carte'
@@ -139,8 +139,8 @@ class GamePage extends StatelessWidget {
 
                   // Phase 3
                   else if (phaseNumber == Phase.Phase3_vote) {
-                    var waitedPlayersNames = room.players.keys.where((playerName) => !room.phase.votes.values.any((players) => players.contains(playerName)));
-                    var hasPlayerVoted = !waitedPlayersNames.contains(player.name);
+                    final waitedPlayersNames = room.players.keys.where((playerName) => !room.phase.votes.values.any((players) => players.contains(playerName)));
+                    final hasPlayerVoted = !waitedPlayersNames.contains(player.name);
                     instructionsColor = _buildInstructionsColor(!hasPlayerVoted);
                     instructionsText = !hasPlayerVoted
                       ? 'Voter pour une carte'
@@ -155,10 +155,10 @@ class GamePage extends StatelessWidget {
                     instructionsText = "Partie terminée !\nLe gagnant est ${room.players.values.reduce((bestPlayer, player) => player.score > bestPlayer.score ? player : bestPlayer).name} !";
                   }
 
-                  var displayPlayedCards = phaseNumber != Phase.Phase2_cardSelect
+                  final displayPlayedCards = phaseNumber != Phase.Phase2_cardSelect
                     ? displayPhase.playedCards
                     : () {
-                        var playedCard = displayPhase.playedCards.getElement(player.name);
+                        final playedCard = displayPhase.playedCards.getElement(player.name);
                         return playedCard != null ? { player.name: playedCard } : null;
                       } ();
 
@@ -202,14 +202,14 @@ class GamePage extends StatelessWidget {
                     // Indications header
                     GameHeader(
                       storytellerText: () {
-                        var storytellerName = displayPhase?.storytellerName;
+                        final storytellerName = displayPhase?.storytellerName;
 
                         // Wait room
                         if (storytellerName == null)
                           return roomName;
 
                         // In-game
-                        var isPast = displayPhase?.number == Phase.Phase4_scores;
+                        final isPast = displayPhase?.number == Phase.Phase4_scores;
                         return storytellerName == playerName
                           ? "Vous ${isPast ? 'êtiez' : 'êtes'} le conteur"
                           : "Le conteur ${isPast ? 'était' : 'est'} $storytellerName";
@@ -492,7 +492,7 @@ class _GameBoardState extends State<GameBoard> {
   void initState() {
     _pageController = PageController(initialPage: _currentTabIndex);
     _pageController.addListener(() {
-      var currentPage = _pageController.page.round();
+      final currentPage = _pageController.page.round();
       if (currentPage != _currentTabIndex)
       _updateTabIndex(currentPage);
     });
@@ -503,7 +503,7 @@ class _GameBoardState extends State<GameBoard> {
   Widget build(BuildContext context) {
     return Consumer<GamePageBloc>(
       builder: (context, bloc, _) {
-        var todoTabIndex = () {
+        final todoTabIndex = () {
           if (widget.onHandCardSelected != null )
             return 0;
           if (widget.onBoardCardSelected != null )
@@ -616,7 +616,7 @@ class CardsView extends StatelessWidget {
             if (card is _BoardCardData)
               boardCard = card;
 
-            var isPlayerCard = boardCard?.owner == bloc.playerName;
+            final isPlayerCard = boardCard?.owner == bloc.playerName;
 
             return Card(
               margin: EdgeInsets.all(6),
@@ -868,7 +868,7 @@ class _CardPickerState extends State<CardPicker> {
     clearFocus(context);   // Keyboard is closed automatically when called from "done" keyboard key, but not in other cases.
 
     // Validate form
-    var form = Form.of(context);
+    final form = Form.of(context);
     if (form.validate())
       form.save();
     else
@@ -1074,7 +1074,7 @@ class Stats extends StatelessWidget {
       child: Row(
         children: () {
           // Sort by score
-          var sortedScores = scores.entries.toList(growable: false)
+          final sortedScores = scores.entries.toList(growable: false)
             ..sort((e1, e2) => e2.value.compareTo(e1.value));
 
           // Build widgets
@@ -1144,7 +1144,7 @@ class GamePageBloc with Disposable {
   void onRoomUpdate(Room room) {
     debugPrint('onRoomUpdate');
 
-    var newPhaseNumber = room.phase?.number;
+    final newPhaseNumber = room.phase?.number;
     if (_currentPhaseNumber != newPhaseNumber) {
       String message;
       if (room.previousPhase?.number == Phase.Phase4_scores && newPhaseNumber == Phase.Phase1_storytellerSentence)
@@ -1237,10 +1237,10 @@ class GamePageBloc with Disposable {
   /// Draw cards from deck
   List<int> _drawCards(Room room, int quantity) {
     // Build deck (card left to be drawn)
-    var deck = cards.keys.toList()..removeAll(room.drawnCards);    // Other way (more expensive ?) : cards.keys.toList()..removeWhere((cardID) => room.drawnCardsIds.contains(cardID));
+    final deck = cards.keys.toList()..removeAll(room.drawnCards);    // Other way (more expensive ?) : cards.keys.toList()..removeWhere((cardID) => room.drawnCardsIds.contains(cardID));
 
     // draw cards
-    var drawnCards = List.generate(quantity, (_) => deck.removeAt(_random.nextInt(deck.length)));
+    final drawnCards = List.generate(quantity, (_) => deck.removeAt(_random.nextInt(deck.length)));
 
     // Add to drawnCard list
     room.drawnCards.addAll(drawnCards);
@@ -1288,7 +1288,7 @@ class GamePageBloc with Disposable {
 
   Future<void> _removePlayedCardAndSaveData(Room room, int card) async {
     // Remove played card from player's hand
-    var player = room.players[playerName];
+    final player = room.players[playerName];
     player.cards.remove(card);
 
     // Update DB
@@ -1309,16 +1309,16 @@ class GamePageBloc with Disposable {
 
   Future<void> _toScoresPhase(Room room) async {
     // ---- Count score ----
-    var storytellerName = room.phase.storytellerName;
-    var votes = room.phase.votes;
-    var getCardOwnerName = (int cardID) => room.phase.playedCards.keyOf(cardID);
+    final storytellerName = room.phase.storytellerName;
+    final votes = room.phase.votes;
+    final getCardOwnerName = (int cardID) => room.phase.playedCards.keyOf(cardID);
 
     // Init this phase's scores
-    var scores = room.phase.scores = room.players.map((playerName, _) => MapEntry(playerName, 0));
+    final scores = room.phase.scores = room.players.map((playerName, _) => MapEntry(playerName, 0));
 
     // If none or all player(s) voted for the storyteller's card
-    var storytellerCardID = room.phase.playedCards[storytellerName];
-    var storytellerCardVotes = votes[storytellerCardID]?.length ?? 0;
+    final storytellerCardID = room.phase.playedCards[storytellerName];
+    final storytellerCardVotes = votes[storytellerCardID]?.length ?? 0;
     if (storytellerCardVotes == 0 || storytellerCardVotes == room.players.length - 1) {
       // Give 2 points for each players except main player
       for (var playerName in scores.keys) {
@@ -1327,7 +1327,7 @@ class GamePageBloc with Disposable {
       }
 
       // Give 1 point to the owner of the card voted by the storyteller
-      var storytellerVotedCardID = votes.entries.firstWhere((entry) => entry.value.contains(storytellerName)).key;
+      final storytellerVotedCardID = votes.entries.firstWhere((entry) => entry.value.contains(storytellerName)).key;
       scores[getCardOwnerName(storytellerVotedCardID)] += 1;
     }
 
@@ -1335,7 +1335,7 @@ class GamePageBloc with Disposable {
     else {
       // For each card vote
       for (var voteEntry in votes.entries) {
-        var cardOwnerName = getCardOwnerName(voteEntry.key);
+        final cardOwnerName = getCardOwnerName(voteEntry.key);
 
         // If it's the storyteller's card
         if (cardOwnerName == storytellerName) {
@@ -1373,13 +1373,13 @@ class GamePageBloc with Disposable {
     // Start new turn
     else {
       // New phase
-      var previousStorytellerPosition = room.players[room.previousPhase.storytellerName].position;
-      var nextStorytellerPosition = (previousStorytellerPosition % room.players.length) + 1;
-      var nextStoryteller = room.players.values.firstWhere((player) => player.position == nextStorytellerPosition).name;
+      final previousStorytellerPosition = room.players[room.previousPhase.storytellerName].position;
+      final nextStorytellerPosition = (previousStorytellerPosition % room.players.length) + 1;
+      final nextStoryteller = room.players.values.firstWhere((player) => player.position == nextStorytellerPosition).name;
       room.phase = Phase(nextStoryteller);
 
       // Draw cards
-      var drawnCards = _drawCards(room, room.players.length);   // Drawing multiple at once is less expansive.
+      final drawnCards = _drawCards(room, room.players.length);   // Drawing multiple at once is less expansive.
       room.players.forEach((_, p) => p.cards.add(drawnCards.removeAt(0)));
 
       // Next turn

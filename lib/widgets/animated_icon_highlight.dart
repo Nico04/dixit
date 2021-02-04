@@ -97,8 +97,8 @@ class CirclePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    var centerX = size.width / 2;
-    var centerY = size.height / 2;
+    final centerX = size.width / 2;
+    final centerY = size.height / 2;
     canvas.drawCircle(Offset(centerX, centerY), radius, _paint);
   }
 

@@ -9,14 +9,14 @@ class WebServices {
   static const _cardsBaseUrl = "https://nico04.github.io/dixit/cards/";
 
   static Future<Map<int, CardData>> getCardsNames() async {
-    var response = await http.get(
+    final response = await http.get(
       Uri.encodeFull(_cardsBaseUrl + "cards.json")
     );
 
-    var result = _processResponse<List<dynamic>>(response);
+    final result = _processResponse<List<dynamic>>(response);
 
     return Map.fromEntries(result.map((cardJson) {
-      var card = CardData.fromJson(cardJson);
+      final card = CardData.fromJson(cardJson);
       return MapEntry(card.id, card);
     }));
   }
@@ -25,7 +25,7 @@ class WebServices {
 
   static T _processResponse<T>(http.Response response) {
     //Read response body
-    var responseBody = response.body;
+    final responseBody = response.body;
     T jsonResponse;
     try {
       jsonResponse = json.decode(responseBody);
