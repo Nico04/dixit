@@ -35,7 +35,7 @@ Future<void> showMessage(BuildContext context, String message, {bool isError, Ob
   isError ??= exception == null ? false : true;
 
   //Try to get higher level context, so the Flash message's position is relative to the phone screen (and not a child widget)
-  var mainPageContext = Scaffold.of(context, nullOk: true)?.context;
+  final mainPageContext = Scaffold.maybeOf(context)?.context;
   if (mainPageContext != null)
     context = mainPageContext;
 
