@@ -211,7 +211,7 @@ class GamePage extends StatelessWidget {
                         // In-game
                         var isPast = displayPhase?.number == Phase.Phase4_scores;
                         return storytellerName == playerName
-                          ? "Vous ${isPast ? 'êtiez' : 'êtes'}  le conteur"
+                          ? "Vous ${isPast ? 'êtiez' : 'êtes'} le conteur"
                           : "Le conteur ${isPast ? 'était' : 'est'} $storytellerName";
                       } (),
                       sentence: displayPhase?.sentence,
@@ -350,96 +350,115 @@ class _WaitingLobbyState extends State<WaitingLobby> {
   Widget build(BuildContext context) {
     return Material(
       color: Theme.of(context).backgroundColor,
-      child: Padding(
-        padding: _pageContentPadding,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-
-            // Counter
-            Text(plural(widget.playersName.length, 'joueur')),
-
-            // Players
-            AppResources.SpacerMedium,
-            ...widget.playersName.map((p) => Card(
+      child: LayoutBuilder(
+        builder: (context, box) {
+          return SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: box.maxHeight),
               child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  p
-                ),
-              ),
-            )).toList(growable: false),
+                padding: _pageContentPadding,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
 
-            // Host controls
-            if (widget.showStartButton)
-              ...[
-                Spacer(),
+                    // Waiting players
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
 
-                //
-                Text('Partie en ${_endGameScore.toInt()} points'),
+                        // Counter
+                        Text(plural(widget.playersName.length, 'joueur')),
 
-                //
-                FlutterSlider(
-                  values: [_endGameScore],
-                  min: 5,
-                  max: 50,
-                  step: FlutterSliderStep(
-                    step: 5
-                  ),
-                  tooltip: FlutterSliderTooltip(
-                    disabled: true,
-                    format: (value) => '${double.parse(value).toInt()}',    //Doesn't work, see https://github.com/Ali-Azmoud/flutter_xlider/issues/65
-                  ),
-                  onDragging: (handlerIndex, lowerValue, upperValue) {
-                    setState(() {
-                      _endGameScore = lowerValue;
-                    });
-                  },
-                  trackBar: FlutterSliderTrackBar(
-                    activeTrackBar: BoxDecoration(
-                      color: AppResources.ColorOrange,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  handler: FlutterSliderHandler(
-                    decoration: BoxDecoration(
-                      color: AppResources.ColorSand,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black26,
-                          blurRadius: 2,
-                          spreadRadius: 0.2,
-                          offset: Offset(0, 1)
-                        )
+                        // Players
+                        AppResources.SpacerMedium,
+                        ...widget.playersName.map((p) => Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(
+                                p
+                            ),
+                          ),
+                        )).toList(growable: false),
+
                       ],
                     ),
-                  ),
-                ),
 
-                // Start button
-                AppResources.SpacerMedium,
-                StreamBuilder<bool>(
-                  stream: isBusy,
-                  initialData: isBusy.value,
-                  builder: (context, snapshot) {
-                    return AsyncButton(
-                      text: 'Commencer',
-                      onPressed: () {     // TODO min 4 players
-                        startAsyncTask(
-                          () async => await widget.onStartGame(_endGameScore.toInt()),
-                          isBusy,
-                          showErrorContext: context
-                        );
-                      },
-                      isBusy: snapshot.data,
-                    );
-                  }
-                ),
-              ],
+                    // Host controls
+                    if (widget.showStartButton)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
 
-          ],
-        ),
+                          // Settings
+                          AppResources.SpacerSmall,
+                          Text('Partie en ${_endGameScore.toInt()} points'),
+                          FlutterSlider(
+                            values: [_endGameScore],
+                            min: 5,
+                            max: 50,
+                            step: FlutterSliderStep(
+                                step: 5
+                            ),
+                            tooltip: FlutterSliderTooltip(
+                              disabled: true,
+                              format: (value) => '${double.parse(value).toInt()}',    //Doesn't work, see https://github.com/Ali-Azmoud/flutter_xlider/issues/65
+                            ),
+                            onDragging: (handlerIndex, lowerValue, upperValue) {
+                              setState(() {
+                                _endGameScore = lowerValue;
+                              });
+                            },
+                            trackBar: FlutterSliderTrackBar(
+                              activeTrackBar: BoxDecoration(
+                                color: AppResources.ColorOrange,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                            handler: FlutterSliderHandler(
+                              decoration: BoxDecoration(
+                                color: AppResources.ColorSand,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black26,
+                                    blurRadius: 2,
+                                    spreadRadius: 0.2,
+                                    offset: Offset(0, 1)
+                                  )
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          // Start button
+                          AppResources.SpacerMedium,
+                          StreamBuilder<bool>(
+                              stream: isBusy,
+                              initialData: isBusy.value,
+                              builder: (context, snapshot) {
+                                return AsyncButton(
+                                  text: 'Commencer',
+                                  onPressed: () {     // TODO min 4 players
+                                    startAsyncTask(
+                                            () async => await widget.onStartGame(_endGameScore.toInt()),
+                                        isBusy,
+                                        showErrorContext: context
+                                    );
+                                  },
+                                  isBusy: snapshot.data,
+                                );
+                              }
+                          ),
+                        ],
+                      ),
+
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
       ),
     );
   }
@@ -977,7 +996,7 @@ class Stats extends StatelessWidget {
                                     if (room.endDate != null)
                                       ...[
                                         Text('Terminé ${timeago.format(room.endDate)}'),
-                                        Text('La partie à duré environ ${printDuration(
+                                        Text('La partie a duré environ ${printDuration(
                                           room.endDate.difference(room.startDate),
                                           locale: frenchLocale,
                                           delimiter: ', ',
@@ -1075,7 +1094,7 @@ class Stats extends StatelessWidget {
             ),
             AppResources.SpacerSmall,
             _buildScoreColumn(
-              texts: sortedScores.map((score) => (delta == true ? '+' : '') + '${score.value} points'),
+              texts: sortedScores.map((score) => (delta == true ? '+' : '') + plural(score.value, 'point')),
               alignment: CrossAxisAlignment.end,
             ),
           ];

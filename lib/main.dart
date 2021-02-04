@@ -24,9 +24,6 @@ void main() async {
   initializeDateFormatting();
   timeago.setLocaleMessages('en', timeago.FrMessages());      //Set default timeAgo local to fr
 
-  // Set to true to have errors sent to Crashlytics while in debug mode
-  Crashlytics.instance.enableInDevMode = true;
-
   // Pass all uncaught errors from the framework to Crashlytics.
   FlutterError.onError = Crashlytics.instance.recordFlutterError;
 
