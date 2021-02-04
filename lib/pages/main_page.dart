@@ -24,7 +24,7 @@ class _MainPageState extends State<MainPage> {
 
   @override
   void initState() {
-    var playerName = StorageService.readPlayerName();
+    final playerName = StorageService.readPlayerName();
     if (playerName != null)
       _playerNameController.text = playerName;
 
