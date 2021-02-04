@@ -1142,7 +1142,7 @@ class GamePageBloc with Disposable {
   }
 
   void onRoomUpdate(Room room) {
-    print('onRoomUpdate');
+    debugPrint('onRoomUpdate');
 
     var newPhaseNumber = room.phase?.number;
     if (_currentPhaseNumber != newPhaseNumber) {
@@ -1175,7 +1175,7 @@ class GamePageBloc with Disposable {
   Room _pendingTaskRoom;
   Timer _pendingRetry;
   Future<void> _tryToNextPhase(Room room) async {
-    print('tryToNextPhase.start');
+    debugPrint('tryToNextPhase.start');
 
     // Only if player is storyteller
     if (playerName != room.phase?.storytellerName)
@@ -1184,7 +1184,7 @@ class GamePageBloc with Disposable {
     // If a task is already running
     if (_currentTask != null) {
       // Add room to be processed ASAP (just keep the more recent one)
-      print('tryToNextPhase.addPending');
+      debugPrint('tryToNextPhase.addPending');
       _pendingTaskRoom = room;
       return;
     }
@@ -1201,7 +1201,7 @@ class GamePageBloc with Disposable {
 
     // Task failed
     catch(e) {
-      print('tryToNextPhase.Error : $e');
+      debugPrint('tryToNextPhase.Error : $e');
 
       // Retry after a delay
       if (_pendingTaskRoom == null)
@@ -1209,12 +1209,12 @@ class GamePageBloc with Disposable {
     }
 
     // Clean
-    print('tryToNextPhase.clean');
+    debugPrint('tryToNextPhase.clean');
     _currentTask = null;
 
     // Execute pending task
     if (_pendingTaskRoom != null) {
-      print('tryToNextPhase.startPending');
+      debugPrint('tryToNextPhase.startPending');
       _tryToNextPhase(_pendingTaskRoom);
       _pendingTaskRoom = null;
     }

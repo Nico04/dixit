@@ -15,6 +15,10 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await StorageService.init();
 
+  // Disable print on release
+  if (kReleaseMode)
+    debugPrint = (message, { wrapWidth }) {};
+
   // Get device ID
   if (!kIsWeb)    //DeviceId plugin never returns on web. See https://github.com/TheDOme6/device_id/issues/20
     App.deviceID = await DeviceId.getID;
