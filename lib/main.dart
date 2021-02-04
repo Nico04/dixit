@@ -31,7 +31,10 @@ void main() async {
   timeago.setLocaleMessages('en', timeago.FrMessages());      //Set default timeAgo local to fr
 
   // Pass all uncaught errors from the framework to Crashlytics.
-  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterError;
+  FlutterError.onError = (flutterErrorDetails) {
+    debugPrint('----------------FIREBASE CRASHLYTICS----------------');
+    FirebaseCrashlytics.instance.recordFlutterError(flutterErrorDetails);
+  };
 
   // Start app
   runApp(App());
