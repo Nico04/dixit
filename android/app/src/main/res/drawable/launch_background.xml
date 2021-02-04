@@ -3,7 +3,7 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- The background color, preferably the same as your normal theme -->
     <item>
-        <color android:color="#F58726"/>
+        <color android:color="@color/appColor"/>
     </item>
 
     <!-- Your product logo - 144dp color version of your app icon -->
