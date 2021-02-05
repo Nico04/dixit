@@ -145,6 +145,8 @@ Future<void> startAsyncTask(AsyncCallback action, BehaviorSubject<bool> isBusySt
   }
 }
 
+bool isStringNullOrEmpty(String s) => s == null || s.isEmpty;
+
 String plural(int count, String input) => '$count $input${count > 1 ? 's' : ''}';
 
 DateTime dateFromString(String dateString) => DateTime.tryParse(dateString ?? '')?.toLocal();

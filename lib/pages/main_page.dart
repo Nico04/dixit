@@ -7,6 +7,7 @@ import 'package:dixit/services/storage_service.dart';
 import 'package:dixit/services/web_services.dart';
 import 'package:dixit/widgets/_widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:package_info/package_info.dart';
 import 'package:rxdart/rxdart.dart';
 
 import '../main.dart';
@@ -33,91 +34,135 @@ class _MainPageState extends State<MainPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: ClearFocusBackground(
-        child: SingleChildScrollView(
-          child: Column(
-            children: <Widget>[
+    return ClearFocusBackground(
+      child: Scaffold(
+        body: Column(
+          mainAxisSize: MainAxisSize.max,
+          children: <Widget>[
 
-              // Header
-              Material(
-                elevation: 6,
-                child: Image.asset('assets/logo.png'),
-              ),
+            // Header
+            Material(
+              elevation: 6,
+              child: Image.asset('assets/logo.png'),
+            ),
 
-              // Content
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Form(
-                  child: Builder(
-                    builder: (context) {
-                      return Column(
-                        children: <Widget>[
+            // Content
+            Expanded(
+              child: FillRemainsScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Form(
+                    child: Builder(
+                      builder: (context) {
+                        return Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
 
-                          // Instructions
-                          Text('Pour rejoindre une partie, entrez votre pseudo et le nom de la partie'),
+                            // Top
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: <Widget>[
 
-                          // Pseudo
-                          AppResources.SpacerLarge,
-                          TextFormField(
-                            controller: _playerNameController,
-                            decoration: InputDecoration(
-                              labelText: 'Pseudo'
-                            ),
-                            textInputAction: TextInputAction.next,
-                            validator: AppResources.validatorLengthAndSpecialChar,
-                            onFieldSubmitted: (value) => FocusScope.of(context).requestFocus(_roomNameFocus),
-                            onSaved: (value) => _bloc.playerName = value,
-                          ),
-
-                          // Room
-                          AppResources.SpacerSmall,
-                          TextFormField(
-                            decoration: InputDecoration(
-                              labelText: 'Nom de la partie',
-                            ),
-                            textInputAction: TextInputAction.done,
-                            focusNode: _roomNameFocus,
-                            validator: AppResources.validatorLengthAndSpecialChar,
-                            onFieldSubmitted: (value) => _bloc.validate(context),
-                            onSaved: (value) => _bloc.roomName = value,
-                          ),
-
-                          // Button or status
-                          AppResources.SpacerLarge,
-                          StreamBuilder<bool>(
-                            stream: _bloc.isBusy,
-                            initialData: _bloc.isBusy.value,
-                            builder: (context, snapshot) {
-                              if (snapshot.hasError)
-                                return Column(
-                                  children: <Widget>[
-                                    Tooltip(
-                                      child: Text(r'/!\ Echec de la synchronisation des données /!\'),
-                                      message: snapshot.error.toString(),
+                                // Title
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        'Bienvenue !',
+                                        style: Theme.of(context).textTheme.headline6,
+                                      ),
                                     ),
-                                    RaisedButton(
-                                      child: Text('Re-essayer'),
-                                      onPressed: _bloc.init,
-                                    )
+                                    StreamBuilder<String>(
+                                      stream: _bloc.appVersion,
+                                      initialData: _bloc.appVersion.value,
+                                      builder: (context, snapshot) {
+                                        final appVersion = snapshot.data;
+                                        return Text(
+                                          isStringNullOrEmpty(appVersion) ? '' : 'v$appVersion',
+                                          textAlign: TextAlign.end,
+                                        );
+                                      },
+                                    ),
                                   ],
-                                );
+                                ),
 
-                              return AsyncButton(
-                                text: 'Rejoindre partie',
-                                onPressed: () => _bloc.validate(context),
-                                isBusy: snapshot.data,
-                              );
-                            }
-                          )
-                        ],
-                      );
-                    }
+                                // Instructions
+                                AppResources.SpacerMedium,
+                                Text('Pour rejoindre une partie, entrez votre pseudo et le nom de la partie'),
+
+                                // Pseudo
+                                AppResources.SpacerLarge,
+                                TextFormField(
+                                  controller: _playerNameController,
+                                  decoration: InputDecoration(
+                                    labelText: 'Pseudo'
+                                  ),
+                                  textInputAction: TextInputAction.next,
+                                  validator: AppResources.validatorLengthAndSpecialChar,
+                                  onFieldSubmitted: (value) => FocusScope.of(context).requestFocus(_roomNameFocus),
+                                  onSaved: (value) => _bloc.playerName = value,
+                                ),
+
+                                // Room
+                                AppResources.SpacerSmall,
+                                TextFormField(
+                                  decoration: InputDecoration(
+                                    labelText: 'Nom de la partie',
+                                  ),
+                                  textInputAction: TextInputAction.done,
+                                  focusNode: _roomNameFocus,
+                                  validator: AppResources.validatorLengthAndSpecialChar,
+                                  onFieldSubmitted: (value) => _bloc.validate(context),
+                                  onSaved: (value) => _bloc.roomName = value,
+                                ),
+                              ],
+                            ),
+
+                            // Bottom
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+
+                                // Button or status
+                                AppResources.SpacerLarge,
+                                StreamBuilder<bool>(
+                                  stream: _bloc.isBusy,
+                                  initialData: _bloc.isBusy.value,
+                                  builder: (context, snapshot) {
+                                    if (snapshot.hasError)
+                                      return Column(
+                                        children: <Widget>[
+                                          Tooltip(
+                                            child: Text(r'/!\ Echec de la synchronisation des données /!\'),
+                                            message: snapshot.error.toString(),
+                                          ),
+                                          RaisedButton(
+                                            child: Text('Re-essayer'),
+                                            onPressed: _bloc.init,
+                                          )
+                                        ],
+                                      );
+
+                                    return AsyncButton(
+                                      text: 'Rejoindre la partie',
+                                      onPressed: () => _bloc.validate(context),
+                                      isBusy: snapshot.data,
+                                    );
+                                  },
+                                ),
+
+                              ],
+                            ),
+
+                          ],
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -128,12 +173,14 @@ class MainPageBloc with Disposable {
   String playerName;
   String roomName;
 
+  final appVersion = BehaviorSubject.seeded('');
   Map<int, CardData> cards;     // All existing cards
 
   final isBusy = BehaviorSubject.seeded(true);
 
   MainPageBloc() {
     init();
+    getAppVersion();
   }
 
   Future<void> init() async {
@@ -145,6 +192,12 @@ class MainPageBloc with Disposable {
     } catch (e) {
       isBusy.addError(e);
     }
+  }
+
+  Future<void> getAppVersion() async {
+    final v = (await PackageInfo.fromPlatform())?.version;
+    if (!appVersion.isClosed)
+      appVersion.add(v);
   }
 
   Future<void> validate(BuildContext context) async {
@@ -222,6 +275,7 @@ class MainPageBloc with Disposable {
 
   @override
   void dispose() {
+    appVersion.close();
     isBusy.close();
     super.dispose();
   }
