@@ -4,7 +4,7 @@ import 'package:dixit/helpers/tools.dart';
 
 class DatabaseService {
   // OPTI for all final fields, don't upload them at each update, because they didn't change
-  static final _rooms = FirebaseFirestore .instance.collection('rooms');
+  static final _rooms = FirebaseFirestore.instance.collection('rooms');
 
   static DocumentReference _getRoomRef(String roomName) =>
     _rooms.doc(roomName.normalized);

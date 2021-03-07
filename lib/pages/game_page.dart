@@ -22,7 +22,7 @@ import 'package:screen/screen.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:vibration/vibration.dart';
 
-const _pageContentPadding = EdgeInsets.all(15);
+const _pageContentPadding = EdgeInsets.all(15);   // TODO Use AppResources
 
 class GamePage extends StatelessWidget {
   final String playerName;
@@ -434,21 +434,21 @@ class _WaitingLobbyState extends State<WaitingLobby> {
                           // Start button
                           AppResources.SpacerMedium,
                           StreamBuilder<bool>(
-                              stream: isBusy,
-                              initialData: isBusy.value,
-                              builder: (context, snapshot) {
-                                return AsyncButton(
-                                  text: 'Commencer',
-                                  onPressed: () {     // TODO min 4 players
-                                    startAsyncTask(
-                                            () async => await widget.onStartGame(_endGameScore.toInt()),
-                                        isBusy,
-                                        showErrorContext: context
-                                    );
-                                  },
-                                  isBusy: snapshot.data,
-                                );
-                              }
+                            stream: isBusy,
+                            initialData: isBusy.value,
+                            builder: (context, snapshot) {
+                              return AsyncButton(
+                                text: 'Commencer',
+                                onPressed: () {     // TODO min 4 players
+                                  startAsyncTask(
+                                    () async => await widget.onStartGame(_endGameScore.toInt()),
+                                    isBusy,
+                                    showErrorContext: context,
+                                  );
+                                },
+                                isBusy: snapshot.data,
+                              );
+                            },
                           ),
                         ],
                       ),

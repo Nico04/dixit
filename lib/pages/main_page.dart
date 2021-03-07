@@ -269,7 +269,7 @@ class MainPageBloc with Disposable {
         ));
       },
       isBusy,
-      showErrorContext: context
+      showErrorContext: context,
     );
   }
 
