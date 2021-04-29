@@ -35,8 +35,8 @@ dependencies:
   duration: ^3.0.6
 
   # Platform info
-  device_id: ^0.2.0
-  screen: ^0.0.5
+  platform_device_id: ^1.0.1
+  screen: ^0.0.5  # TODO replace with wakelock ? see https://github.com/clovisnicolas/flutter_screen/issues/32
   vibration: ^1.7.3
   package_info: ^2.0.0
 

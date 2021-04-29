@@ -1,4 +1,3 @@
-import 'package:device_id/device_id.dart';
 import 'package:dixit/resources/theme.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -6,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
+import 'package:platform_device_id/platform_device_id.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 import 'pages/_pages.dart';
@@ -22,8 +22,7 @@ void main() async {
     debugPrint = (message, { wrapWidth }) {};
 
   // Get device ID
-  if (!kIsWeb)    //DeviceId plugin never returns on web. See https://github.com/TheDOme6/device_id/issues/20
-    App.deviceID = await DeviceId.getID;
+  App.deviceID = await PlatformDeviceId.getDeviceId;
 
   // Init localisation formatter
   Intl.defaultLocale = 'fr';
