@@ -1,10 +1,11 @@
-import 'package:dixit/helpers/tools.dart';
+import 'package:dixit/utils/_utils.dart';
 import 'package:dixit/models/_models.dart';
 import 'package:dixit/pages/_pages.dart';
 import 'package:dixit/resources/resources.dart';
 import 'package:dixit/services/database_service.dart';
 import 'package:dixit/services/storage_service.dart';
 import 'package:dixit/services/web_services.dart';
+import 'package:dixit/utils/runtime_info.dart';
 import 'package:dixit/widgets/_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info/package_info.dart';
@@ -187,17 +188,17 @@ class MainPageBloc with Disposable {
     try {
       isBusy.add(true);   // Needed for when re-trying
       cards = await WebServices.getCardsNames();
-      if (!isBusy.isClosed && isBusy.value != false)
-        isBusy.add(false);
+      if (isBusy.value != false)
+        isBusy.tryAdd(false);
     } catch (e) {
       isBusy.addError(e);
     }
   }
 
   Future<void> getAppVersion() async {
+    if (RuntimeInfo.isWeb) return;
     final v = (await PackageInfo.fromPlatform())?.version;
-    if (!appVersion.isClosed)
-      appVersion.add(v);
+    appVersion.tryAdd(v);
   }
 
   Future<void> validate(BuildContext context) async {

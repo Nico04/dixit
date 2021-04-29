@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dixit/models/_models.dart';
-import 'package:dixit/helpers/tools.dart';
+import 'package:dixit/utils/_utils.dart';
 
 class DatabaseService {
   // OPTI for all final fields, don't upload them at each update, because they didn't change

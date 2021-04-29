@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:dixit/helpers/tools.dart';
+import 'package:dixit/utils/_utils.dart';
 import 'package:dixit/models/_models.dart';
 import 'package:dixit/resources/resources.dart';
 import 'package:dixit/services/database_service.dart';
@@ -886,8 +886,8 @@ class _CardPickerState extends State<CardPicker> {
 
     catch (e) {
       showMessage(context, AppResources.TextError, exception: e);
-      if (!isBusy.isClosed && isBusy.value != false)
-        isBusy.add(false);
+      if (isBusy.value != false)
+        isBusy.tryAdd(false);
     }
   }
 

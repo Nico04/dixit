@@ -1,5 +1,5 @@
 import 'dart:collection';
-import 'package:dixit/helpers/tools.dart';
+import 'package:dixit/utils/_utils.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'phase.g.dart';
