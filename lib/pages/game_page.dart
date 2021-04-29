@@ -1077,12 +1077,25 @@ class Stats extends StatelessWidget {
           final sortedScores = scores.entries.toList(growable: false)
             ..sort((e1, e2) => e2.value.compareTo(e1.value));
 
+          // Build player rank
+          //final sortedPlayerRank = List.generate(sortedScores.length, (index) => null);
+          final sortedPlayerRank = <int>[1];
+          int currentRank = sortedPlayerRank.first;
+          for (int i = 1; i < sortedScores.length; i++) {
+            // Compare score with previous player
+            if (sortedScores[i].value == sortedScores[i - 1].value) {
+              sortedPlayerRank.add(currentRank);
+            } else {
+              sortedPlayerRank.add(currentRank = i + 1);
+            }
+          }
+
           // Build widgets
           return [
             if (delta != true)
               ...[
                 _buildScoreColumn(
-                  texts: List.generate(sortedScores.length, (index) => '#${index + 1}'),
+                  texts: sortedPlayerRank.map((rank) => '#$rank'),
                   bold: true,
                 ),
                 AppResources.SpacerSmall,
