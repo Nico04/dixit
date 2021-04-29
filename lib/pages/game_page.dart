@@ -69,7 +69,7 @@ class GamePage extends StatelessWidget {
                             AppResources.SpacerMedium,
                             Text('Synchronisation en cours'),
                             AppResources.SpacerMedium,
-                            RaisedButton(
+                            ElevatedButton(
                               child: Text('Quitter la partie'),
                               onPressed: () => Navigator.of(context).pop(),
                             ),
@@ -543,18 +543,18 @@ class _GameBoardState extends State<GameBoard> {
                   child: Icon(Icons.pan_tool),
                   playing: todoTabIndex == 0 && _currentTabIndex != todoTabIndex,
                 ),
-                title: Text('Main'),
+                label: 'Main',
               ),
               BottomNavigationBarItem(
                 icon: AnimatedIconHighlight(
                   child: Icon(Icons.table_chart),
                   playing: todoTabIndex == 1 && _currentTabIndex != todoTabIndex,
                 ),
-                title: Text('Table'),
+                label: 'Table',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.show_chart),
-                title: Text('Stats'),
+                label: 'Stats',
               ),
             ],
             currentIndex: _currentTabIndex,
@@ -1015,7 +1015,7 @@ class Stats extends StatelessWidget {
                           AppResources.SpacerMedium,
                           Align(
                             alignment: Alignment.centerRight,
-                            child: RaisedButton(
+                            child: ElevatedButton(
                               child: Text('Quitter la partie'),
                               onPressed: () async {
                                 if (await GamePage.askExit(context))

@@ -29,7 +29,7 @@ class Room {
 
   Room(this.name, {Map<String, Player> players, List<int> drawnCards, this.phase, this.previousPhase, int turn, DateTime createDate, this.startDate, this.endDate}) :
     this.players = (players ?? LinkedHashMap<String, Player>()).sorted((e1, e2) => e1.value.position.compareTo(e2.value.position)),    // Force sort by position, as order in NOT guaranteed by Firestore
-    this.drawnCards = drawnCards ?? List<int>(),
+    this.drawnCards = drawnCards ?? [],
     this.turn = turn ?? 0,
     this.createDate = createDate ?? DateTime.now();
 

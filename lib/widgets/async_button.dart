@@ -10,7 +10,7 @@ class AsyncButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return RaisedButton(
+    return ElevatedButton(
       child: AnimatedCrossFade(
         duration: AppResources.DurationAnimationMedium,
         firstChild: Text(

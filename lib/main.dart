@@ -1,5 +1,5 @@
 import 'package:device_id/device_id.dart';
-import 'package:dixit/resources/resources.dart';
+import 'package:dixit/resources/theme.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
@@ -49,22 +49,7 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Dixit',
-      theme: ThemeData(
-        primaryColor: AppResources.ColorRed,
-        accentColor: AppResources.ColorDarkSand,
-        backgroundColor: AppResources.ColorSand,
-        scaffoldBackgroundColor: AppResources.ColorSand,
-        cardTheme: CardTheme(
-          color: AppResources.ColorOrange,
-        ),
-        buttonTheme: ButtonThemeData(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(5),
-          ),
-          buttonColor: AppResources.ColorDarkSand,
-          textTheme: ButtonTextTheme.primary,
-        ),
-      ),
+      theme: appTheme(),
       home: MainPage(),
     );
   }

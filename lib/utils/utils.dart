@@ -65,9 +65,11 @@ Future<void> showMessage(BuildContext context, String message, {bool isError, Ob
           ),
           primaryAction: exception == null
             ? null
-            : FlatButton(
-                child: Text('Détails'),
-                textColor: Colors.white,
+            : TextButton(
+                child: Text(
+                  'Détails',
+                  style: TextStyle(color: Colors.white),
+                ),
                 onPressed: () {
                   controller.dismiss();
                   return showDialog(
@@ -101,14 +103,14 @@ Future<bool> askUserConfirmation({ BuildContext context, String title, String me
       backgroundColor: AppResources.ColorSand,
       content: Text(message),
       actions: <Widget>[
-        FlatButton(
+        TextButton(
           child: Text(
             'Annuler',
             style: TextStyle(color: AppResources.ColorDarkGrey),
           ),
           onPressed: () => Navigator.of(context).pop(false),
         ),
-        FlatButton(
+        TextButton(
           child: Text(
             okText,
             style: TextStyle(color: AppResources.ColorRed),

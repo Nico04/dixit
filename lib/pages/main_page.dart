@@ -137,7 +137,7 @@ class _MainPageState extends State<MainPage> {
                                             child: Text(r'/!\ Echec de la synchronisation des données /!\'),
                                             message: snapshot.error.toString(),
                                           ),
-                                          RaisedButton(
+                                          ElevatedButton(
                                             child: Text('Re-essayer'),
                                             onPressed: _bloc.init,
                                           )
